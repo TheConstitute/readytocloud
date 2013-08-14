@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "testApp::receiveTCP:testApp.cpp">
+      </ContextState>
+      <ContextState
+         contextName = "testApp::refreshRemoteMesh:testApp.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "remoteMeshes[0].getNumVertices()">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "LEDRing::fadeBrightness:LEDRing.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "fadeDelta">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "testApp::receiveMeshTCP:testApp.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "positions">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "testApp::sendMeshTCP:testApp.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "data[1]">
+            </PersistentString>
+            <PersistentString
+               value = "tcpServer.getNumClients()">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "LEDRing::updatePulse:LEDRing.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "ofGetElapsedTimef() ">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "testApp::setup:testApp.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "PORT_OSC_MESH_SEND">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "testApp::getTriangleMesh:testApp.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "">
+            </PersistentString>
+            <PersistentString
+               value = "depth[35350]">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "UdpSocket::Implementation::Bind:UdpSocket.cpp">
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
