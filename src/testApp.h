@@ -100,8 +100,6 @@ class testApp : public ofBaseApp{
         ofVideoPlayer overlay_out_local;
         ofVideoPlayer overlay_in_remote;
         ofVideoPlayer overlay_out_remote;
-
-        ofVideoPlayer clouds;
     
         bool b_overlay_in_local = false;
         bool b_overlay_out_local = false;
@@ -214,8 +212,7 @@ class testApp : public ofBaseApp{
     bool send_ghost = false;
     
     bool resetUsers = false;
-    
-    int alphaClouds = 255;
+
     
     ofxCvContourFinder contourFinder;
     int threshold_far = 60;

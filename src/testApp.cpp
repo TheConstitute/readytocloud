@@ -39,7 +39,6 @@ void testApp::setup() {
             else if ( argument == "DEPTH_THRESHOLD" ) { depthThreshold = ofToFloat(value); }
             else if ( argument == "MIRROR" ) { if(value=="1") mirror = true; else mirror = false; }
             else if ( argument == "ACTIVATE_NETWORK" ) { if(value=="1") activate_network = true; else activate_network = false; }
-            else if ( argument == "SHOW_CLOUD" ) { if(value=="1") b_clouds = true;  else b_clouds = false; }
 
             else if ( argument == "LED_PULSE_MIN" ) { ledRingInteraction.setPulseMin(ofToInt(value)); }
             else if ( argument == "LED_PULSE_MAX" ) { ledRingInteraction.setPulseMax(ofToInt(value)); }
@@ -113,12 +112,6 @@ void testApp::setup() {
     overlay_out_remote.setPixelFormat(OF_PIXELS_RGBA);
 	overlay_out_remote.loadMovie("tornado-beam_out.mov");
     overlay_out_remote.setLoopState(OF_LOOP_NONE);
-    
-    clouds.setPixelFormat(OF_PIXELS_RGBA);
-	clouds.loadMovie("cloud.mov");
-    clouds.setLoopState(OF_LOOP_NORMAL);
-    
-    if(b_clouds) clouds.play();
     
     /* OSC SETUP */
     oscReceiver.setup(PORT_OSC_CONTROL_RECEIVE);    
@@ -198,7 +191,7 @@ void testApp::update() {
     overlay_out_local.update();
     overlay_in_remote.update();
     overlay_out_remote.update();
-    clouds.update();
+
     
     /* update DMX */
     updateScene();
@@ -320,16 +313,6 @@ void testApp::draw() {
 
 
     /* DRAW VIDEO LAYERS */
-    
-    if(b_clouds)
-    {
-        ofPushStyle();
-            ofSetColor(spotCloud1.getColor(), alphaClouds);
-            ofEnableAlphaBlending();
-            clouds.draw(0,0, ofGetWidth(), ofGetHeight());
-            ofDisableAlphaBlending();
-        ofPopStyle();
-    }
     
     ofPopMatrix();
 
@@ -820,11 +803,6 @@ void testApp::keyPressed (int key) {
             beamOut_local();
             break;
             
-        case 'c':
-            clouds.play();
-            b_clouds = !b_clouds;
-			break;
-            
         case '+':
             nextState();
             break;
@@ -853,14 +831,6 @@ void testApp::keyPressed (int key) {
         
         case 'u':
             resetUsers = true;
-            break;
-        case 'n':
-            alphaClouds -= 5;
-            if (alphaClouds < 0) alphaClouds = 0;
-            break;
-        case 'm':
-            alphaClouds += 5;
-            if (alphaClouds > 255) alphaClouds = 255;
             break;
             
         case 't':
