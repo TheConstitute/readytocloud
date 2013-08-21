@@ -9,8 +9,12 @@ void testApp::setup() {
     
     //changeScreenRes(1024, 768);
     
-    bool playback = false;
-    string playbackFile = "test.oni";
+    // GUI
+    gui.setup(); // most of the time you don't need a name but don't forget to call setup
+	gui.add(near_threshold.set("near threshold", 0, 0, 10000));
+    gui.add(far_threshold.set("far threshold", 10000, 0, 10000));
+    gui.add(depth_threshold.set("depth threshold", 50, 0, 500));
+    
     
     /* LOAD SETTINGS */
     ofBuffer buffer = ofBufferFromFile("settings.config");
@@ -30,13 +34,11 @@ void testApp::setup() {
             else if ( argument == "PORT_OSC_CONTROL_SEND" ) { PORT_OSC_CONTROL_SEND = ofToInt(value); }
             else if ( argument == "PORT_OSC_CONTROL_RECEIVE" ) { PORT_OSC_CONTROL_RECEIVE = ofToInt(value); }
             else if ( argument == "IPAD_IP" ) { IPAD_IP = value; }
-            else if ( argument == "PLAYBACK" ) { if(value=="1") playback = true; else playback = false; }
-            else if ( argument == "PLAYBACK_FILE" ) { playbackFile = value; }
             else if ( argument == "ENTTEC_PORT" ) { ENTTEC_PORT = value; }
 
             else if ( argument == "MESH_SCALE" ) { mesh_scale_local = ofToFloat(value); mesh_scale_remote = ofToFloat(value); }
             else if ( argument == "MESH_RESOLUTION" ) { meshResolution_local = ofToFloat(value); meshResolution_remote = ofToFloat(value); }
-            else if ( argument == "DEPTH_THRESHOLD" ) { depthThreshold = ofToFloat(value); }
+            else if ( argument == "DEPTH_THRESHOLD" ) { depth_threshold = ofToFloat(value); }
             else if ( argument == "MIRROR" ) { if(value=="1") mirror = true; else mirror = false; }
             else if ( argument == "ACTIVATE_NETWORK" ) { if(value=="1") activate_network = true; else activate_network = false; }
 
@@ -73,28 +75,14 @@ void testApp::setup() {
     }
 	
     /* KINECT SETUP */
-    // TODO: turn off the stuff we don't need
-    kinect.setup();
+    kinect.setLed(ofxKinect::LED_OFF);
+    kinect.init(false, false); // disable video image (faster fps)
+    // enable depth->video image calibration
+	kinect.setRegistration(true);
+    kinect.setCameraTiltAngle(0);
     
-    if(playback) kinect.startPlayer(playbackFile);
+    // TODO: add possibility to playback recorded kinect data
 
-    kinect.addImageGenerator();
-    kinect.addDepthGenerator();
-    kinect.setRegister(true);
-    kinect.setMirror(mirror);
-    kinect.addUserGenerator();
-    kinect.setMaxNumUsers(NUM_MAX_USERS);
-
-    kinect.start();
-
-    kinect.setUseMaskTextureAllUsers(true); // this turns on mask pixels internally AND creates mask textures efficiently
-    kinect.setUseMaskPixelsAllUsers(true);
-    kinect.setUsePointCloudsAllUsers(true);
-    kinect.setPointCloudDrawSizeAllUsers(2); // size of each 'point' in the point cloud
-    kinect.setPointCloudResolutionAllUsers(meshResolution_local); // resolution of the mesh created for the point cloud
-    kinect.setUseDepthRawPixels(true);  // use the raw pixels otherwise we get strange distortions
-
-    //kinect.startRecording(ofToDataPath("test2.oni"));
     
     /* VIDEO LAYERS */
     overlay_in_local.setPixelFormat(OF_PIXELS_RGBA);
@@ -131,19 +119,25 @@ void testApp::setup() {
     fogMachine.setup(&dmx, 1);
     
     dmxUpdate();
-    ofHideCursor();
+    
+//    ofHideCursor();
+    
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
     fboRemote.allocate(ofGetWidth(), ofGetHeight());
     
     for(int i = 0; i<NUM_MAX_USERS; i++){
         remoteMeshes[i] = ofMesh();
         remoteMeshesTemp[i] = ofMesh();
-    }    
+    }
+    
+    
+    mesh_local.setMode(OF_PRIMITIVE_TRIANGLES);
 }
 
 
 //--------------------------------------------------------------
 void testApp::update() {
+
     // update the network stuff
     if(activate_network){
         // get the data from the clients
@@ -151,11 +145,14 @@ void testApp::update() {
         
         // try to setup the connection if it is broken every 5 seconds
         if(!connected && (ofGetElapsedTimef() - lastConnectionCheck) > 5) {
-//            // versuch: tcpserver zurŸcksetzen
-//            if(tcpServer. getNumClients()>0) {
-//                // disconnect the clients
-//                for(int i=0; i<tcpServer.getNumClients(); i++) { tcpServer.disconnectClient(i); ofLog()<< "server disconnected client " << ofToString(i);}
-//            }
+            // versuch: tcpserver zurŸcksetzen
+            // if(tcpServer. getNumClients()>0) {
+                // disconnect the clients
+                // for(int i=0; i<tcpServer.getNumClients(); i++) {
+                    //tcpServer.disconnectClient(i);
+                    // ofLog()<< "server disconnected client " << ofToString(i);
+                    //}
+                //}
             connected = tcpClient.setup(SERVER_IP, REMOTE_SERVER_PORT);
             if(connected) ofLog() << "client is connected to server " << tcpClient.getIP() << ":" << tcpClient.getPort();
             lastConnectionCheck = ofGetElapsedTimef();
@@ -163,27 +160,16 @@ void testApp::update() {
         else if(!tcpClient.isConnected()){ connected = false; }
     }
     
-    if(resetUsers){
-        for(int i=0; i<kinect.getNumTrackedUsers(); i++){
-            kinect.resetUserTracking(i);
-        }
-        resetUsers = false;
-    }
-    
     kinect.update();
-    kinect.setPointCloudResolutionAllUsers(meshResolution_local);
-    
-    oscUpdate();
-    
     wireframeUpdate();
     
+    oscUpdate();
     
     /* UPDATE VIDEOS */
     overlay_in_local.update();
     overlay_out_local.update();
     overlay_in_remote.update();
     overlay_out_remote.update();
-
     
     /* update DMX */
     updateScene();
@@ -192,6 +178,7 @@ void testApp::update() {
 
 //--------------------------------------------------------------
 void testApp::draw() {
+    ofNoFill();
     ofPushMatrix();
     
     ofBackground(0, 0, 0);
@@ -288,90 +275,80 @@ void testApp::draw() {
     ofDisableAlphaBlending();
 
     ofPopMatrix();
+    
+    gui.draw();
 }
 
 //--------------------------------------------------------------
 void testApp::wireframeUpdate(){
-    
-    userMeshes.clear();
-    
-    ofMesh allUserPoints;
-    
-    // go through all users and add their wireframes to list
-    for (int u = 0; u < kinect.getNumTrackedUsers(); u++) {
-        ofxOpenNIUser & user = kinect.getTrackedUser(u);
-        ofMesh userPoints = user.getPointCloud();
-        ofMesh userWireframe;
-        getTriangleMesh(&userPoints, &userWireframe, depthThreshold);
-        allUserPoints.addVertices(userWireframe.getVertices());
-        
-        //        ofPoint headWorldPos = user.getJoint(JOINT_HEAD).getWorldPosition();
-        //        headWorldPos.y += 100;
-        //        userWireframe.addVertex(ofVec3f(headWorldPos.x, headWorldPos.y, headWorldPos.z));
-        //        userWireframe.addVertex(ofVec3f(headWorldPos.x, headWorldPos.y+100, headWorldPos.z));
-        //        userWireframe.addVertex(ofVec3f(headWorldPos.x, headWorldPos.y, headWorldPos.z+10));
-        
-        userMeshes.push_back(userWireframe);
-        
-        // send this thing to the remote computer
-        if(activate_network) sendMeshTCP(&userWireframe, u);
-    }
-    
-    /* get the center of the pointcloud */
-    if(local_autocenter){
-        ofVec3f sumOfAllPoints(0,0,0);
-        vector<ofVec3f> vertices = allUserPoints.getVertices();
-        for(int i = 0; i < vertices.size(); i++){
-            sumOfAllPoints += vertices[i];
-        }
-        if(vertices.size() > 0)
-            mesh_local_center = sumOfAllPoints / vertices.size();
-    }
-    
-    // calculate the center of the remote mesh
-    if(remote_autocenter){
-        ofMesh allUserPoints;
-        
-        // put all vertices in one mesh
-        for(int i = 0; i< NUM_MAX_USERS; i++){ allUserPoints.addVertices(remoteMeshes[i].getVertices()); }
-        
-        // get the center
-        ofVec3f sumOfAllPoints(0,0,0);
-        vector<ofVec3f> vertices = allUserPoints.getVertices();
-        for(int i = 0; i < vertices.size(); i++){
-            sumOfAllPoints += vertices[i];
-        }
-        if(vertices.size() > 0)
-            mesh_remote_center = sumOfAllPoints / vertices.size();
-    }
 
+    // there is a new frame and we are connected
+	if(kinect.isFrameNew()) {
+        int w = 640;
+        int h = 480;
+        mesh_local.clear();
+
+        for(int y = 0; y < h; y += meshResolution_local) {
+            for(int x = 0; x < w; x += meshResolution_local) {
+                float distance = kinect.getDistanceAt(x, y);
+                if(distance > near_threshold && distance < far_threshold) {
+                    ofVec3f current = kinect.getWorldCoordinateAt(x, y);
+                    ofVec3f right = kinect.getWorldCoordinateAt(x + meshResolution_local, y);
+                    ofVec3f below = kinect.getWorldCoordinateAt(x, y + meshResolution_local);
+                    
+                    if(abs(current.distance(right)) < depth_threshold && abs(current.distance(below)) < depth_threshold){
+                        mesh_local.addVertex(current);
+                        mesh_local.addVertex(right);
+                        mesh_local.addVertex(below);
+                    }
+                }
+            }
+        }
+    }
+    
+
+// TODO: reactivate this autocenter stuff
+//    /* get the center of the pointcloud */
+//    if(local_autocenter){
+//        ofVec3f sumOfAllPoints(0,0,0);
+//        vector<ofVec3f> vertices = allUserPoints.getVertices();
+//        for(int i = 0; i < vertices.size(); i++){
+//            sumOfAllPoints += vertices[i];
+//        }
+//        if(vertices.size() > 0)
+//            mesh_local_center = sumOfAllPoints / vertices.size();
+//    }
+//    
+//    // calculate the center of the remote mesh
+//    if(remote_autocenter){
+//        ofMesh allUserPoints;
+//        
+//        // put all vertices in one mesh
+//        for(int i = 0; i< NUM_MAX_USERS; i++){ allUserPoints.addVertices(remoteMeshes[i].getVertices()); }
+//        
+//        // get the center
+//        ofVec3f sumOfAllPoints(0,0,0);
+//        vector<ofVec3f> vertices = allUserPoints.getVertices();
+//        for(int i = 0; i < vertices.size(); i++){
+//            sumOfAllPoints += vertices[i];
+//        }
+//        if(vertices.size() > 0)
+//            mesh_remote_center = sumOfAllPoints / vertices.size();
+//    }
+        
 }
 
 //--------------------------------------------------------------
 void testApp::drawWireframeLocal(){
     // draw local user(s)
     ofPushMatrix();
-    
-        // wenn man auf den fbo malt, muss y auch gespiegelt werden
         ofScale(1, -1, -1);
-        
-        // apply z-scaling (to increase depth-effect
-        ofScale(1, 1, zScaling);
-        
+
         // apply centering
         ofTranslate(-mesh_local_center.x, -mesh_local_center.y, -mesh_local_center.z);
-        
-        ofPushStyle();
     
-        // draw the local meshes
-        if(localMesh) {
-            for(int i=0; i < userMeshes.size(); i++){
-                if(userMeshes[i].getNumVertices() > 10){ userMeshes[i].drawWireframe(); }
-            }
-        }
-        
-        ofPopStyle();
-    
+        // draw the local mesh
+        mesh_local.draw();
     ofPopMatrix();
 }
 
@@ -486,48 +463,12 @@ void testApp::dmxUpdate(){
 }
 
 //--------------------------------------------------------------
-void testApp::getTriangleMesh(ofMesh* userMesh, ofMesh* newMesh, int depthThreshold){
-    
-    newMesh->setMode(OF_PRIMITIVE_TRIANGLES);
-    
-    if(userMesh->getNumVertices() > 100)
-    {
-        // initialize the vectors
-        vector<vector<float> > vectors;
-        vectors.resize(640);
-        for(int y= 0; y<640; y++){vectors[y].resize(480);}
-        
-        float res = meshResolution_local;
-
-        ofShortPixels& depth = kinect.getDepthRawPixels();
-        for(int i=0; i<userMesh->getNumVertices(); i++){
-            ofVec3f v = userMesh->getVertex(i);
-            vectors[v.x][v.y] = v.z;
-        }
-        
-        for(int x=0; x<640 - res; x+=res){
-            for(int y=0; y<480 - res; y+=res){
-                if(vectors[x][y] != 0 && vectors[x+res][y] != 0 && vectors[x][y+res] != 0 && vectors[x+res][y+res] != 0){
-                    if(abs(vectors[x][y] - vectors[x+res][y]) < depthThreshold && abs(vectors[x][y] - vectors[x][y+res]) < depthThreshold){
-                        newMesh->addVertex(kinect.projectiveToWorld(ofPoint(x, y, vectors[x][y])));
-                        newMesh->addVertex(kinect.projectiveToWorld(ofPoint(x+res, y, vectors[x+res][y])));
-                        newMesh->addVertex(kinect.projectiveToWorld(ofPoint(x, y+res, vectors[x][y+res])));
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-//--------------------------------------------------------------
 void testApp::exit() {
     tcpServer.close();
     tcpClient.close();
     ofLog() << "server & client stopped";
-    kinect.stop();
-    ofLog() << "stopped tracking";
-
+    kinect.setCameraTiltAngle(0); // zero the tilt on exit
+	kinect.close();
 }
 
 //--------------------------------------------------------------
@@ -595,10 +536,6 @@ void testApp::keyPressed (int key) {
                         
         case 'x':
             xCorrection_local++;
-            break;
-                
-        case 'u':
-            resetUsers = true;
             break;
                         
         case 'd':
@@ -971,16 +908,7 @@ void testApp::oscUpdateAll(){
     updater.clear();
     updater.setAddress("/spots/interaction/fadetime"); updater.addFloatArg(spotInteraction1.getFadeTime());
     oscSender.sendMessage(updater);
-    
-    // num users
-    updater.clear();
-    updater.setAddress("/numUsers/local"); updater.addStringArg(ofToString(kinect.getNumTrackedUsers()));
-    oscSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/numUsers/remote"); updater.addStringArg(ofToString(numTrackedUsers_remote)); 
-    oscSender.sendMessage(updater);
-    
+
     //connection
     updater.clear();
     updater.setAddress("/connection"); if(tcpClient.isConnected()) updater.addFloatArg(1); else updater.addFloatArg(0);
@@ -1010,7 +938,7 @@ void testApp::sendMeshTCP(const ofMesh* mesh, int user){
         
         // send clear message
         data[0] = CLEAR_MESH_USER0 + user;
-        data[1] = kinect.getNumTrackedUsers();
+        data[1] = 0;//kinect.getNumTrackedUsers(); // TODO: review this part!
         data[2] = 0;
         data[3] = 0;
         if (connected && tcpClient.isConnected()) {
@@ -1057,33 +985,4 @@ void testApp::addMeshVertex(float x, float y, float z, int user){
 void testApp::refreshRemoteMesh(int user){
     remoteMeshes[user] = ofMesh(remoteMeshesTemp[user]);
     remoteMeshesTemp[user].clear();
-}
-
-//--------------------------------------------------------------
-// kšnnte noch hilfreich sein!
-void testApp::changeScreenRes(int h, int v){
-    CGRect screenFrame = CGDisplayBounds(kCGDirectMainDisplay);
-    CGSize screenSize  = screenFrame.size;
-    printf("current resolution is %f %f\n", screenSize.width, screenSize.height);
-    
-    if(h != screenSize.width || v != screenSize.height){
-        
-        CGDirectDisplayID display = CGMainDisplayID(); // ID of main display
-        CFDictionaryRef mode = CGDisplayBestModeForParameters(display, 32, h, v, NULL); // mode to switch to
-        
-        CGDisplayConfigRef config;
-        
-        if (CGBeginDisplayConfiguration(&config) == kCGErrorSuccess) {
-            CGConfigureDisplayMode(config, display, mode);
-            CGCompleteDisplayConfiguration(config, kCGConfigureForSession );
-        }else{
-//            printf(logStr, "Error changing resolution to %i, %i ",h,v);
-            
-        }
-    } else{
-        
-//        printf(logStr, "screen resolution did not need to be changed. it is %i, %i ",h,v);
-        
-    }
-    
 }

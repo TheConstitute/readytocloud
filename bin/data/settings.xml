@@ -1,0 +1,5 @@
+<group>
+	<near_threshold>0</near_threshold>
+	<far_threshold>2000</far_threshold>
+	<depth_threshold>55</depth_threshold>
+</group>

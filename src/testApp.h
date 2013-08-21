@@ -1,15 +1,15 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxOpenNI.h"
 #include "ofxOsc.h"
-#include "ofxCv.h"
 #include "ofxOpenCv.h"
 #include "ofxNetwork.h"
 #include "ofxDmx.h"
+#include "ofxKinect.h"
 #include "StairvilleLEDParSpot.h"
 #include "LEDRing.h"
 #include "FogMachine.h"
+#include "ofxGui.h"
 
 
 #define ADD_MESH_VERTEX_USER0 0
@@ -22,20 +22,6 @@
 #define CLEAR_MESH_USER2 7
 #define CLEAR_MESH_USER3 8
 #define CLEAR_MESH_USER4 9
-
-#define ADD_GHOST_VERTEX_USER0 10
-#define ADD_GHOST_VERTEX_USER1 11
-#define ADD_GHOST_VERTEX_USER2 12
-#define ADD_GHOST_VERTEX_USER3 13
-#define ADD_GHOST_VERTEX_USER4 14
-#define CLEAR_GHOST_USER0 15
-#define CLEAR_GHOST_USER1 16
-#define CLEAR_GHOST_USER2 17
-#define CLEAR_GHOST_USER3 18
-#define CLEAR_GHOST_USER4 19
-
-
-#define CLEAR_GHOSTS 19
 
 #define NUM_MAX_USERS 5
 
@@ -52,11 +38,9 @@ class testApp : public ofBaseApp{
     
         void drawPointCloud();
         
-        void getTriangleMesh(ofMesh* userMesh, ofMesh* newMesh, int depthThreshold);
         void polylineToPath(ofPath* path, ofPolyline* polyline, int smoothing);
         void addMeshVertex(float x, float y, float z, int user);
         void refreshRemoteMesh(int user);
-        void changeScreenRes(int h, int v);
     
         // INITIALIZATION & UPDATER
         void initPanel();
@@ -74,27 +58,33 @@ class testApp : public ofBaseApp{
         void sendMeshTCP(const ofMesh* mesh, int user);
         void receiveTCP();
     
-        void beamIn_local();
-        void beamOut_local();
-        void beamIn_remote();
-        void beamOut_remote();
+        // KINECT STUFF
+        ofxKinect kinect;
     
-        float _(string name);
+        // GUI PARAMETERS
+    	ofxPanel gui;
+        ofParameter<float> near_threshold, far_threshold;
+        ofParameter<float> depth_threshold;
     
-        ofxOpenNI kinect;
-    
+        // VIDEO OVERLAYS
         ofVideoPlayer overlay_in_local;
         ofVideoPlayer overlay_out_local;
         ofVideoPlayer overlay_in_remote;
         ofVideoPlayer overlay_out_remote;
     
+        void beamIn_local();
+        void beamOut_local();
+        void beamIn_remote();
+        void beamOut_remote();
+
         bool b_overlay_in_local = false;
         bool b_overlay_out_local = false;
         bool b_overlay_in_remote = false;
         bool b_overlay_out_remote = false;
         bool b_clouds = false;
     
-        vector<ofMesh> userMeshes;
+
+        ofMesh mesh_local;
         ofMesh remoteMeshes[NUM_MAX_USERS];
         ofMesh remoteMeshesTemp[NUM_MAX_USERS];
 
@@ -141,7 +131,7 @@ class testApp : public ofBaseApp{
     /* SETTINGS */
     bool local_autocenter = true;
     bool remote_autocenter = false;
-    float mesh_scale_local = 1500;
+    ofParameter<float> mesh_scale_local = 1500;
     float mesh_scale_remote = 1500;
     float xCorrection_local = 0;
     float xCorrection_remote = 0;
@@ -156,8 +146,7 @@ class testApp : public ofBaseApp{
     
     bool localMesh = true;
     bool remoteMesh = true;
-    float zScaling = 1;
-    float depthThreshold = 50;
+    
     
     bool mirror = true;
     bool activate_network = false;
@@ -175,8 +164,6 @@ class testApp : public ofBaseApp{
     
     float fadeStartTime_local = 0;
     float fadeStartTime_remote = 0;
-    
-    bool resetUsers = false;
     
     bool showDebug = false;
 };
