@@ -39,10 +39,6 @@
 
 #define NUM_MAX_USERS 5
 
-#define RENDER_MODE_WIREFRAME 0
-#define RENDER_MODE_GHOST 1
-#define RENDER_MODE_SKELETON 2
-
 class testApp : public ofBaseApp{
 
 	public:
@@ -60,31 +56,22 @@ class testApp : public ofBaseApp{
         void polylineToPath(ofPath* path, ofPolyline* polyline, int smoothing);
         void addMeshVertex(float x, float y, float z, int user);
         void refreshRemoteMesh(int user);
-        void addGhostVertex(float x, float y, int user);
-        void refreshRemoteGhost(int user);
         void changeScreenRes(int h, int v);
     
         // INITIALIZATION & UPDATER
         void initPanel();
         void oscUpdate();
         void oscUpdateAll();
-        void ghostUpdate();
         void wireframeUpdate();
         void dmxUpdate();
         void updateScene();
     
     void drawWireframeLocal();
     void drawWireframeRemote();
-    void drawGhostLocal();
-    void drawGhostRemote();
-    void drawSkeletonLocal();
-    void drawSkeletonRemote();
-
     void nextState();
 
         // NETWORK FUNCTIONS
         void sendMeshTCP(const ofMesh* mesh, int user);
-        void sendGhostTCP(ofPolyline* ghost_local_polyline, int user);
         void receiveTCP();
     
         void beamIn_local();
@@ -110,10 +97,6 @@ class testApp : public ofBaseApp{
         vector<ofMesh> userMeshes;
         ofMesh remoteMeshes[NUM_MAX_USERS];
         ofMesh remoteMeshesTemp[NUM_MAX_USERS];
-    
-        ofPath ghosts_local[5];
-        ofPath ghosts_remote[5];
-        ofPolyline ghosts_remote_polyline[NUM_MAX_USERS];
 
         ofCamera camera;
     
@@ -122,10 +105,6 @@ class testApp : public ofBaseApp{
     
         ofVec3f mesh_local_center;
         ofVec3f mesh_remote_center;
-        ofVec2f ghosts_local_center;
-        ofVec2f ghosts_remote_center;        
-    
-        ofMesh attachment;
     
     /* NETWORK SETTINGS */
     int PORT_OSC_CONTROL_SEND = 7001;
@@ -153,10 +132,7 @@ class testApp : public ofBaseApp{
     FogMachine fogMachine;
     
     int dmx_state = 0;
-    int render_mode_local = 1;
-    int render_mode_remote = 0;
     
-    bool renderModeChanged = true;
     bool lightStateChanged = true;
     bool settingsChanged = true;
     bool firstFrame_local = false;
@@ -186,15 +162,6 @@ class testApp : public ofBaseApp{
     bool mirror = true;
     bool activate_network = false;
     
-    float ghosts_blur_local = 11;
-    float ghosts_blur_remote = 11;
-    float ghosts_smoothing_local = 10;
-    float ghosts_smoothing_remote = 10;
-    float ghosts_local_scale = 2;
-    float ghosts_remote_scale = 2;
-    float skeleton_scale_local = 1.85;
-    float skeleton_scale_remote = 1.85;
-    
     ofFbo fboLocal;
     ofFbo fboRemote;
     
@@ -209,34 +176,7 @@ class testApp : public ofBaseApp{
     float fadeStartTime_local = 0;
     float fadeStartTime_remote = 0;
     
-    bool send_ghost = false;
-    
     bool resetUsers = false;
-
-    
-    ofxCvContourFinder contourFinder;
-    int threshold_far = 60;
-    int threshold_near = 0;
-
-    
-    ofxCvGrayscaleImage cvImage;
-    ofxCvGrayscaleImage cv_threshold1;
-    ofxCvGrayscaleImage cv_threshold2;
     
     bool showDebug = false;
-    int numContours = 0;
-//    
-//
-//    
-//    float interaction_pulse_min = 100;
-//    float interaction_pulse_max = 200;
-//    float brightness_interaction = 100;
-//    float fade_time = 3;
-//    
-//    float brightness_cloud = 100;
-//    float cloud_fadeIn_time = 2;
-//    ofColor color_cloud = ofColor(255, 255, 255);
-//    
-//    float fog_level = 255;
-//    bool fog = false;
 };

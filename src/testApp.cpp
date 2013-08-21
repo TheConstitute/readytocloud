@@ -26,7 +26,7 @@ void testApp::setup() {
             else if ( argument == "LOCAL_SERVER_PORT" ) { LOCAL_SERVER_PORT = ofToInt(value);  }
             else if ( argument == "REMOTE_SERVER_PORT" ) { REMOTE_SERVER_PORT = ofToInt(value);  }
             else if ( argument == "ISSERVER" ) { if(value=="1") isServer = true; else isServer = false; }
-            else if ( argument == "SEND_GHOST" ) { if(value=="1") send_ghost = true; else send_ghost = false; }
+
             else if ( argument == "PORT_OSC_CONTROL_SEND" ) { PORT_OSC_CONTROL_SEND = ofToInt(value); }
             else if ( argument == "PORT_OSC_CONTROL_RECEIVE" ) { PORT_OSC_CONTROL_RECEIVE = ofToInt(value); }
             else if ( argument == "IPAD_IP" ) { IPAD_IP = value; }
@@ -118,7 +118,6 @@ void testApp::setup() {
     oscSender.setup(IPAD_IP, PORT_OSC_CONTROL_SEND);
     
     // push all settings to the ipad
-    renderModeChanged = true;
     lightStateChanged = true;
     oscUpdateAll();
     
@@ -139,13 +138,7 @@ void testApp::setup() {
     for(int i = 0; i<NUM_MAX_USERS; i++){
         remoteMeshes[i] = ofMesh();
         remoteMeshesTemp[i] = ofMesh();
-    }
-    
-    
-    cvImage.allocate(640, 480);
-    cv_threshold1.allocate(640, 480);
-    cv_threshold2.allocate(640, 480);
-    
+    }    
 }
 
 
@@ -184,7 +177,6 @@ void testApp::update() {
     
     wireframeUpdate();
     
-    if(render_mode_local == RENDER_MODE_GHOST) ghostUpdate();
     
     /* UPDATE VIDEOS */
     overlay_in_local.update();
@@ -211,13 +203,9 @@ void testApp::draw() {
             camera.setGlobalPosition(0, 0, mesh_scale_local);
             camera.begin();
     
-            if(!firstFrame_local){
-                if(render_mode_local == RENDER_MODE_WIREFRAME){ drawWireframeLocal(); }
-            }
+            drawWireframeLocal();
     
             camera.end();
-            if(render_mode_local == RENDER_MODE_SKELETON) drawSkeletonLocal();
-            if(render_mode_local == RENDER_MODE_GHOST){ drawGhostLocal(); }
     
             // set alpha back to 255 when drawing the beam
             ofSetColor(colorCharacter_local, 255);
@@ -258,13 +246,9 @@ void testApp::draw() {
                 camera.setGlobalPosition(0, 0, mesh_scale_remote);
                 camera.begin();
         
-                if(!firstFrame_remote){
-                    if(render_mode_remote == RENDER_MODE_WIREFRAME){ drawWireframeRemote(); }
-                }
+                drawWireframeRemote();
         
                 camera.end();
-                if(render_mode_remote == RENDER_MODE_SKELETON) drawSkeletonRemote();
-                if(render_mode_remote == RENDER_MODE_GHOST){ drawGhostRemote(); }
         
                 // set alpha back to 255 when drawing the beam
                 ofSetColor(colorCharacter_remote, 255);
@@ -303,26 +287,7 @@ void testApp::draw() {
         if(tcpClient.isConnected()) fboRemote.draw(xCorrection_remote, -yCorrection_remote);
     ofDisableAlphaBlending();
 
-//    if(!firstFrame){
-//
-//        if(render_mode_remote == RENDER_MODE_GHOST){ drawGhostRemote(); }
-//    }
-//
-//
-//if(render_mode_remote == RENDER_MODE_WIREFRAME){ drawWireframeRemote(); }
-
-
-    /* DRAW VIDEO LAYERS */
-    
     ofPopMatrix();
-
-    if(showDebug)
-    {
-        cvImage.draw(0, 0, 320, 240);
-        cv_threshold1.draw(330, 0, 320, 240);
-        cv_threshold2.draw(660, 0, 320, 240);
-        contourFinder.draw();
-    }
 }
 
 //--------------------------------------------------------------
@@ -364,7 +329,7 @@ void testApp::wireframeUpdate(){
     }
     
     // calculate the center of the remote mesh
-    if(render_mode_remote == RENDER_MODE_WIREFRAME && remote_autocenter){
+    if(remote_autocenter){
         ofMesh allUserPoints;
         
         // put all vertices in one mesh
@@ -424,185 +389,6 @@ void testApp::drawWireframeRemote(){
     }
     ofPopMatrix();
 
-}
-
-//--------------------------------------------------------------
-void testApp::drawGhostLocal(){
-    if(numContours >0){
-        // local ghosts
-        ofPushMatrix();
-        
-        // scale the ghosts
-        ofScale(ghosts_local_scale, ghosts_local_scale);
-
-    //    if(_("mirror")) ofScale(-1, 1);
-        // draw all local ghosts
-    //    for(int i = 0; i<kinect.getNumTrackedUsers(); i++)
-    //    {
-            ghosts_local[0].setColor(ofColor(colorCharacter_local.r, colorCharacter_local.g, colorCharacter_local.b, alpha_local));
-            
-            // prevent division by zero and only draw, when there is enough to draw
-            if(ghosts_local_scale != 0 && ghosts_local[0].getTessellation().getNumVertices() > 30){
-                ghosts_local[0].draw(
-                                 ((ofGetWidth()/2)/ghosts_local_scale) - ghosts_local_center.x,
-                                 ((ofGetHeight()/2)/ghosts_local_scale) - ghosts_local_center.y);
-            }
-    //    }
-
-        
-        ofPopMatrix();
-    }
-}
-
-//--------------------------------------------------------------
-void testApp::drawGhostRemote(){
-    ofPushMatrix();
-    
-    // scale the remote ghosts
-    ofScale(ghosts_remote_scale, ghosts_remote_scale);
-
-    // draw all remote ghosts
-    for(int i = 0; i<NUM_MAX_USERS; i++)
-    {
-        ghosts_remote[i].setColor(colorCharacter_remote);
-        
-        // prevent division by zero and only draw, when there is enough to draw
-        if(ghosts_remote_scale != 0 && ghosts_local[i].getTessellation().getNumVertices() > 30){
-            ghosts_remote[i].draw(
-                              ((ofGetWidth()/2)/ghosts_remote_scale) - ghosts_remote_center.x,
-                              ((ofGetHeight()/2)/ghosts_remote_scale) - ghosts_remote_center.y);
-        }
-    }
-    ofPopMatrix();
-}
-
-//--------------------------------------------------------------
-void testApp::drawSkeletonLocal(){
-    ofPushMatrix();
-    
-    ofPoint center = ofPoint(0,0);
-    
-    // get the center of all the ghosts
-    for (int u = 0; u < kinect.getNumTrackedUsers(); u++) {
-        ofxOpenNIUser & user = kinect.getTrackedUser(u);
-        if(user.isSkeleton()){
-            center += kinect.worldToProjective(user.getCenter());
-        }
-    }
-    
-    center/=kinect.getNumTrackedUsers();
-//    ofLog() << ofToString(center);
-    
-    for (int u = 0; u < kinect.getNumTrackedUsers(); u++) {
-        ofxOpenNIUser & user = kinect.getTrackedUser(u);
-        ofScale(skeleton_scale_local, skeleton_scale_local);
-//        if(_("mirror")) ofScale(-1, 1);
-        if(skeleton_scale_local != 0){
-            ofTranslate(
-                    (ofGetWidth()/2)/skeleton_scale_local - center.x,
-                     (ofGetHeight()/2)/skeleton_scale_local - center.y);
-        }
-        user.drawSkeleton();
-        
-        ofPoint head = user.getJoint(JOINT_HEAD).getProjectivePosition();
-        ofCircle(head.x, head.y, 20);
-    }
-    
-    ofPopMatrix();
-}
-
-void testApp::drawSkeletonRemote(){
-    // TODO: Skeleton Remote
-}
-
-//--------------------------------------------------------------
-void testApp::ghostUpdate()
-{
-        ofPixels& p = kinect.getDepthPixels();
-        
-        if(p.size() > 30) {
-            ofImage img;
-            img.setFromPixels(p.getPixels(), 640, 480, OF_IMAGE_COLOR_ALPHA);
-            img.setImageType(OF_IMAGE_GRAYSCALE);
-            
-            
-            cvImage.setFromPixels(img.getPixels(), 640, 480);
-            
-            
-//            cvImage.blur(ghosts_blur_local);
-            cv_threshold1.setFromPixels(img.getPixels(), 640, 480);
-            cv_threshold2.setFromPixels(img.getPixels(), 640, 480);
-            
-            cv_threshold1.invert();
-            cv_threshold1.threshold(threshold_far);
-            
-//            cvImage.invert();
-//            cvImage.threshold(threshold);
-
-            cv_threshold2.threshold(threshold_near);
-            
-            cvImage.absDiff(cv_threshold1, cv_threshold2);
-            
-            cvImage.invert();
-            
-            numContours = contourFinder.findContours(cvImage, (100*100), (640*480), 10, true);
-            
-            ofPolyline polyline;
-            
-//            for(int i=0; i < contourFinder.size(); i++){
-                        for(int i=0; i < numContours; i++){
-                // add vertices from all found countours into one polyline
-                if(!contourFinder.blobs[i].hole)
-                    polyline.addVertices(contourFinder.blobs[i].pts);
-                
-            }
-            
-            if(polyline.size() > 0){
-                // die ungeglättete polyline verschicken
-//                if(activate_network && send_ghost) sendGhostTCP(&polyline, u);
-
-                // polyline glätten und in den lokalen ofPath des aktuellen users schreiben
-                polylineToPath(&ghosts_local[0], &polyline, int(ghosts_smoothing_local));
-            }
-        }
-        else {
-            ghosts_local[0].clear();
-        }
-
-    ofVec3f sumOfAllPoints(0,0,0);
-    
-    if(local_autocenter){
-        // update center of local ghosts
-        // das ist eine ziemlich aufwendige variante, kann man mit Sicherheit auch wesentlich geschickter lösen
-        ofMesh allGhosts;
-        for(int i=0; i<NUM_MAX_USERS; i++){
-            allGhosts.addVertices(ghosts_local[i].getTessellation().getVertices());
-        }
-        
-        vector<ofVec3f> vertices = allGhosts.getVertices();
-        for(int i = 0; i < vertices.size(); i++){
-            sumOfAllPoints += vertices[i];
-        }
-        if(vertices.size() > 0)
-            ghosts_local_center = sumOfAllPoints / vertices.size();
-    }
-    
-    if(remote_autocenter){
-        // updade center of remote ghosts
-        ofMesh allRemoteGhosts;
-        
-        for(int i=0; i<numTrackedUsers_remote; i++){
-            allRemoteGhosts.addVertices(ghosts_remote[i].getTessellation().getVertices());
-        }
-        
-        sumOfAllPoints = ofVec3f(0,0,0);
-        vector<ofVec3f> remote_vertices = allRemoteGhosts.getVertices();
-        for(int i = 0; i < remote_vertices.size(); i++){
-            sumOfAllPoints += remote_vertices[i];
-        }
-        if(remote_vertices.size() > 0)
-            ghosts_remote_center = sumOfAllPoints / remote_vertices.size();
-    }
 }
 
 //--------------------------------------------------------------
@@ -806,53 +592,15 @@ void testApp::keyPressed (int key) {
         case '+':
             nextState();
             break;
-            
-        case 'a':
-            render_mode_local++;
-            if(render_mode_local > RENDER_MODE_SKELETON) render_mode_local = RENDER_MODE_WIREFRAME;
-            renderModeChanged = true;
-            break;
-            
+                        
         case 'x':
             xCorrection_local++;
             break;
-        
-        case '1':
-            render_mode_local = 0;
-            break;
-        
-        case '2':
-            render_mode_local = 1;
-            break;
-        
-        case '3':
-            render_mode_local = 2;
-            break;
-        
+                
         case 'u':
             resetUsers = true;
             break;
-            
-        case 't':
-            threshold_near--;
-            ofLog() << "Threshold near: " << threshold_near;
-            break;
-            
-        case 'z':
-            threshold_near++;
-            ofLog() << "Threshold near: " << threshold_near;
-            break;
-            
-        case 'g':
-            threshold_far--;
-            ofLog() << "Threshold far: " << threshold_far;
-            break;
-            
-        case 'h':
-            threshold_far++;
-            ofLog() << "Threshold far: " << threshold_far;
-            break;
-            
+                        
         case 'd':
             showDebug = !showDebug;
             break;
@@ -867,17 +615,9 @@ void testApp::oscUpdate()
     while(oscReceiver.hasWaitingMessages()){
         ofxOscMessage m;
         oscReceiver.getNextMessage(&m);
-        
-        // render mode
-        if (m.getAddress() == "/renderMode/local/0") { render_mode_local = 0; renderModeChanged = true;}
-        else if (m.getAddress() == "/renderMode/local/1") { render_mode_local = 1; renderModeChanged = true; }
-        else if (m.getAddress() == "/renderMode/local/2") { render_mode_local = 2; renderModeChanged = true; }
-        else if (m.getAddress() == "/renderMode/remote/0") { render_mode_remote = 0; renderModeChanged = true;}
-        else if (m.getAddress() == "/renderMode/remote/1") { render_mode_remote = 1; renderModeChanged = true; }
-        else if (m.getAddress() == "/renderMode/remote/2") { render_mode_remote = 2; renderModeChanged = true; }
-        
+                
         // light state
-        else if (m.getAddress() == "/lightState/0") { dmx_state = 0; lightStateChanged = true; }
+        if (m.getAddress() == "/lightState/0") { dmx_state = 0; lightStateChanged = true; }
         else if (m.getAddress() == "/lightState/1") { dmx_state = 1; lightStateChanged = true; }
         else if (m.getAddress() == "/lightState/2") { dmx_state = 2; lightStateChanged = true; }
         else if (m.getAddress() == "/lightState/3") { dmx_state = 3; lightStateChanged = true; }
@@ -896,18 +636,6 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/centering/autolocal") { local_autocenter =  bool(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/centering/autoremote") { remote_autocenter = bool(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/mirror") { mirror = bool(m.getArgAsFloat(0)); }
-        
-        // ghost settings
-        else if (m.getAddress() == "/ghost/local/scale") { ghosts_local_scale = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/ghost/local/blur") { ghosts_blur_local = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/ghost/local/smoothing") { ghosts_smoothing_local = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/ghost/remote/scale") { ghosts_remote_scale = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/ghost/remote/blur") { ghosts_blur_remote = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/ghost/remote/smoothing") { ghosts_smoothing_remote = m.getArgAsFloat(0); }
-        
-        // skeleton settings
-        else if (m.getAddress() == "/skeleton/local/scale") { skeleton_scale_local = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/skeleton/remote/scale") { skeleton_scale_remote = m.getArgAsFloat(0); }
         
         // fog settings
         else if (m.getAddress() == "/fog/level") { fogMachine.setLevel(m.getArgAsFloat(0)); }
@@ -965,92 +693,6 @@ void testApp::oscUpdate()
 void testApp::oscUpdateAll(){
     /* update the interface on the ipad */
     ofxOscMessage updater;
-    
-    if(renderModeChanged){
-        renderModeChanged = false;
-        
-        // render modes
-        if(render_mode_local == 0) {
-            updater.clear();
-            updater.setAddress("/renderMode/local/0"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/local/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/local/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-        }
-        else if(render_mode_local == 1) {
-            updater.clear();
-            updater.setAddress("/renderMode/local/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/local/1"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/local/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-        }
-        else if(render_mode_local == 2) {
-            updater.clear();
-            updater.setAddress("/renderMode/local/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/local/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/local/2"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
-        }
-        
-        // remote render modes
-        if(render_mode_remote == 0) {
-            updater.clear();
-            updater.setAddress("/renderMode/remote/0"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/remote/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/remote/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-        }
-        else if(render_mode_remote == 1) {
-            updater.clear();
-            updater.setAddress("/renderMode/remote/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/remote/1"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/remote/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-        }
-        else if(render_mode_remote == 2) {
-            updater.clear();
-            updater.setAddress("/renderMode/remote/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/remote/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/renderMode/remote/2"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
-        }
-    }
     
     if(lightStateChanged){
     // light states
@@ -1235,41 +877,6 @@ void testApp::oscUpdateAll(){
     updater.setAddress("/centering/autoremote"); updater.addFloatArg(remote_autocenter);
     oscSender.sendMessage(updater);
     
-    // ghost settings
-    updater.clear();
-    updater.setAddress("/ghost/local/scale"); updater.addFloatArg(ghosts_local_scale);
-    oscSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/ghost/local/blur"); updater.addFloatArg(ghosts_blur_local);
-    oscSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/ghost/local/smoothing"); updater.addFloatArg(ghosts_smoothing_local);
-    oscSender.sendMessage(updater);
-    
-    
-    updater.clear();
-    updater.setAddress("/ghost/remote/scale"); updater.addFloatArg(ghosts_remote_scale);
-    oscSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/ghost/remote/blur"); updater.addFloatArg(ghosts_blur_remote);
-    oscSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/ghost/remote/smoothing"); updater.addFloatArg(ghosts_smoothing_remote);
-    oscSender.sendMessage(updater);
-    
-    // skeleton settings
-    updater.clear();
-    updater.setAddress("/skeleton/local/scale"); updater.addFloatArg(skeleton_scale_local);
-    oscSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/skeleton/remote/scale"); updater.addFloatArg(skeleton_scale_remote);
-    oscSender.sendMessage(updater);
-    
     // fog settings
     updater.clear();
     updater.setAddress("/fog/level"); updater.addFloatArg(fogMachine.getLevel());
@@ -1414,43 +1021,11 @@ void testApp::sendMeshTCP(const ofMesh* mesh, int user){
 }
 
 //--------------------------------------------------------------
-void testApp::sendGhostTCP(ofPolyline* ghost_local_polyline, int user){
-    float data[4];
-    if(ghost_local_polyline != NULL){
-        for(int i = 0; i < ghost_local_polyline->getVertices().size(); i++)
-        {
-            data[0] = ADD_GHOST_VERTEX_USER0 + user;
-            ofVec3f vertex = ghost_local_polyline->getVertices()[i];
-            data[1] = vertex.x;
-            data[2] = vertex.y;
-            data[3] = 0;    // der ghost ist 2D
-            // just send the raw data. not compatible with other operatingsystems, though. but that doesn't really matter in this case.
-            if (connected && tcpClient.isConnected()){
-                try { tcpClient.sendRawBytes((const char*)data, 4 * sizeof(float)); }
-                catch (int e) { ofLog() << "caught an exception in sendGhostTCP: " << e; }
-            }
-        }
-        
-        // send clear message
-        data[0] = CLEAR_GHOST_USER0 + user;
-        data[1] = kinect.getNumTrackedUsers();
-        data[2] = 0;
-        data[3] = 0;
-        if (connected && tcpClient.isConnected()){
-            try { tcpClient.sendRawBytes((const char*)data, 4 * sizeof(float)); }
-            catch (int e) { ofLog() << "caught an exception in sendGhostTCP: " << e; }
-        }
-    }
-}
-
-//--------------------------------------------------------------
 void testApp::receiveTCP(){
     for(int client = 0; client < tcpServer.getNumClients(); client++){
         float buf[4];
         try{
             while(tcpServer.receiveRawBytes(client, (char*) buf, 4 * sizeof(float)) == 4 * sizeof(float)){
-//                clientTimeout = ofGetElapsedTimef();
-                
                 if(buf[0] == CLEAR_MESH_USER0){ refreshRemoteMesh(0); numTrackedUsers_remote = buf[1]; }
                 else if (buf[0] == CLEAR_MESH_USER1){ refreshRemoteMesh(1); numTrackedUsers_remote = buf[1]; }
                 else if (buf[0] == CLEAR_MESH_USER2){ refreshRemoteMesh(2); numTrackedUsers_remote = buf[1]; }
@@ -1461,17 +1036,6 @@ void testApp::receiveTCP(){
                 else if (buf[0] == ADD_MESH_VERTEX_USER2) addMeshVertex(buf[1], buf[2], buf[3], 2);
                 else if (buf[0] == ADD_MESH_VERTEX_USER3) addMeshVertex(buf[1], buf[2], buf[3], 3);
                 else if (buf[0] == ADD_MESH_VERTEX_USER4) addMeshVertex(buf[1], buf[2], buf[3], 4);
-//                else if (buf[0] == CLEAR_GHOSTS) { for(int i=0; i<NUM_MAX_USERS; i++) { ghosts_remote[i].clear(); ghosts_remote_polyline[i].clear(); }}
-                else if (buf[0] == ADD_GHOST_VERTEX_USER0) addGhostVertex(buf[1], buf[2], 0);
-                else if (buf[0] == ADD_GHOST_VERTEX_USER1) addGhostVertex(buf[1], buf[2], 1);
-                else if (buf[0] == ADD_GHOST_VERTEX_USER2) addGhostVertex(buf[1], buf[2], 2);
-                else if (buf[0] == ADD_GHOST_VERTEX_USER3) addGhostVertex(buf[1], buf[2], 3);
-                else if (buf[0] == ADD_GHOST_VERTEX_USER4) addGhostVertex(buf[1], buf[2], 4);
-                else if(buf[0] == CLEAR_GHOST_USER0){ refreshRemoteGhost(0); numTrackedUsers_remote = buf[1]; }
-                else if (buf[0] == CLEAR_GHOST_USER1){ refreshRemoteGhost(1); numTrackedUsers_remote = buf[1];}
-                else if (buf[0] == CLEAR_GHOST_USER2){ refreshRemoteGhost(2); numTrackedUsers_remote = buf[1];}
-                else if (buf[0] == CLEAR_GHOST_USER3){ refreshRemoteGhost(3); numTrackedUsers_remote = buf[1];}
-                else if (buf[0] == CLEAR_GHOST_USER4){ refreshRemoteGhost(4); numTrackedUsers_remote = buf[1];}
             }
         }
         catch (int e) { ofLog() << "caught an error while receiving data over TCP: " << e; }
@@ -1495,43 +1059,7 @@ void testApp::refreshRemoteMesh(int user){
     remoteMeshesTemp[user].clear();
 }
 
-void testApp::refreshRemoteGhost(int user){
-    // make a nice pathe out of the polyline
-    for(int i=0; i<numTrackedUsers_remote; i++){
-        polylineToPath(&ghosts_remote[i], &ghosts_remote_polyline[i], int(ghosts_smoothing_remote));
-    }
-}
-
 //--------------------------------------------------------------
-void testApp::addGhostVertex(float x, float y, int user){    
-    ghosts_remote_polyline[user].addVertex(x, y);
-}
-
-//--------------------------------------------------------------
-void testApp::polylineToPath(ofPath* path, ofPolyline* polyline, int smoothing){
-    if(path != NULL && polyline != NULL){
-        // clear the path before we assign new stuff to it
-        path->clear();
-        
-        // if we have points on the polyline, convert them into the ofPath
-        if(polyline->size()>0)
-        {
-            ofPolyline polyline_smooth = polyline->getSmoothed(ghosts_smoothing_local);
-            
-            for( int i = 0; i < polyline_smooth.getVertices().size(); i++) {
-                if(i == 0) {
-                    path->newSubPath();
-                    path->moveTo(polyline_smooth.getVertices()[i] );
-                } else {
-                    path->lineTo(polyline_smooth.getVertices()[i] );
-                }
-            }
-//            path->close();
-//            path->simplify();
-        }
-    }
-}
-
 // könnte noch hilfreich sein!
 void testApp::changeScreenRes(int h, int v){
     CGRect screenFrame = CGDisplayBounds(kCGDirectMainDisplay);
