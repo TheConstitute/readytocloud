@@ -10,6 +10,7 @@
 #include "LEDRing.h"
 #include "FogMachine.h"
 #include "ofxGui.h"
+#include "meshMan.h"
 
 
 #define ADD_MESH_VERTEX_USER0 0
@@ -35,24 +36,19 @@ class testApp : public ofBaseApp{
 		void draw();
         void exit();
         void keyPressed(int key);
-    
-        void drawPointCloud();
-        
+            
         void polylineToPath(ofPath* path, ofPolyline* polyline, int smoothing);
         void addMeshVertex(float x, float y, float z, int user);
         void refreshRemoteMesh(int user);
     
         // INITIALIZATION & UPDATER
-        void initPanel();
         void oscUpdate();
         void oscUpdateAll();
-        void wireframeUpdate();
         void dmxUpdate();
         void updateScene();
     
-    void drawWireframeLocal();
-    void drawWireframeRemote();
-    void nextState();
+        void drawWireframeRemote();
+        void nextState();
 
         // NETWORK FUNCTIONS
         void sendMeshTCP(const ofMesh* mesh, int user);
@@ -63,8 +59,6 @@ class testApp : public ofBaseApp{
     
         // GUI PARAMETERS
     	ofxPanel gui;
-        ofParameter<float> near_threshold, far_threshold;
-        ofParameter<float> depth_threshold;
     
         // VIDEO OVERLAYS
         ofVideoPlayer overlay_in_local;
@@ -84,7 +78,6 @@ class testApp : public ofBaseApp{
         bool b_clouds = false;
     
 
-        ofMesh mesh_local;
         ofMesh remoteMeshes[NUM_MAX_USERS];
         ofMesh remoteMeshesTemp[NUM_MAX_USERS];
 
@@ -138,15 +131,12 @@ class testApp : public ofBaseApp{
     float yCorrection_local = 0;
     float yCorrection_remote = 0;
     
-    int meshResolution_local = 5;
-    int meshResolution_remote = 5;
     
     ofColor colorCharacter_local = ofColor(255, 255, 255);
     ofColor colorCharacter_remote = ofColor(255, 255, 255);
     
-    bool localMesh = true;
-    bool remoteMesh = true;
-    
+    bool draw_local_mesh = true;
+    bool draw_remote_mesh = true;
     
     bool mirror = true;
     bool activate_network = false;
@@ -166,4 +156,6 @@ class testApp : public ofBaseApp{
     float fadeStartTime_remote = 0;
     
     bool showDebug = false;
+    
+    meshMan local_mesh;
 };

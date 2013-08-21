@@ -9,12 +9,6 @@ void testApp::setup() {
     
     //changeScreenRes(1024, 768);
     
-    // GUI
-    gui.setup(); // most of the time you don't need a name but don't forget to call setup
-	gui.add(near_threshold.set("near threshold", 0, 0, 10000));
-    gui.add(far_threshold.set("far threshold", 10000, 0, 10000));
-    gui.add(depth_threshold.set("depth threshold", 50, 0, 500));
-    
     
     /* LOAD SETTINGS */
     ofBuffer buffer = ofBufferFromFile("settings.config");
@@ -37,8 +31,7 @@ void testApp::setup() {
             else if ( argument == "ENTTEC_PORT" ) { ENTTEC_PORT = value; }
 
             else if ( argument == "MESH_SCALE" ) { mesh_scale_local = ofToFloat(value); mesh_scale_remote = ofToFloat(value); }
-            else if ( argument == "MESH_RESOLUTION" ) { meshResolution_local = ofToFloat(value); meshResolution_remote = ofToFloat(value); }
-            else if ( argument == "DEPTH_THRESHOLD" ) { depth_threshold = ofToFloat(value); }
+
             else if ( argument == "MIRROR" ) { if(value=="1") mirror = true; else mirror = false; }
             else if ( argument == "ACTIVATE_NETWORK" ) { if(value=="1") activate_network = true; else activate_network = false; }
 
@@ -76,13 +69,20 @@ void testApp::setup() {
 	
     /* KINECT SETUP */
     kinect.setLed(ofxKinect::LED_OFF);
-    kinect.init(false, false); // disable video image (faster fps)
-    // enable depth->video image calibration
-	kinect.setRegistration(true);
+    kinect.init(false, false);      // disable video image (faster fps)
+	kinect.setRegistration(true);   // enable depth->video image calibration
     kinect.setCameraTiltAngle(0);
     
     // TODO: add possibility to playback recorded kinect data
-
+    
+    // GUI
+    gui.setup(); // most of the time you don't need a name but don't forget to call setup
+	gui.add(local_mesh.near_threshold.set("near threshold", 0, 0, 10000));
+    gui.add(local_mesh.far_threshold.set("far threshold", 10000, 0, 10000));
+    gui.add(local_mesh.depth_threshold.set("depth threshold", 50, 0, 500));
+    gui.add(local_mesh.mesh_resolution.set("mesh resolution", 5, 0, 20));
+    
+    
     
     /* VIDEO LAYERS */
     overlay_in_local.setPixelFormat(OF_PIXELS_RGBA);
@@ -131,7 +131,6 @@ void testApp::setup() {
     }
     
     
-    mesh_local.setMode(OF_PRIMITIVE_TRIANGLES);
 }
 
 
@@ -161,7 +160,8 @@ void testApp::update() {
     }
     
     kinect.update();
-    wireframeUpdate();
+    
+    local_mesh.updateFromKinect(&kinect);
     
     oscUpdate();
     
@@ -190,7 +190,7 @@ void testApp::draw() {
             camera.setGlobalPosition(0, 0, mesh_scale_local);
             camera.begin();
     
-            drawWireframeLocal();
+            local_mesh.draw();
     
             camera.end();
     
@@ -277,79 +277,6 @@ void testApp::draw() {
     ofPopMatrix();
     
     gui.draw();
-}
-
-//--------------------------------------------------------------
-void testApp::wireframeUpdate(){
-
-    // there is a new frame and we are connected
-	if(kinect.isFrameNew()) {
-        int w = 640;
-        int h = 480;
-        mesh_local.clear();
-
-        for(int y = 0; y < h; y += meshResolution_local) {
-            for(int x = 0; x < w; x += meshResolution_local) {
-                float distance = kinect.getDistanceAt(x, y);
-                if(distance > near_threshold && distance < far_threshold) {
-                    ofVec3f current = kinect.getWorldCoordinateAt(x, y);
-                    ofVec3f right = kinect.getWorldCoordinateAt(x + meshResolution_local, y);
-                    ofVec3f below = kinect.getWorldCoordinateAt(x, y + meshResolution_local);
-                    
-                    if(abs(current.distance(right)) < depth_threshold && abs(current.distance(below)) < depth_threshold){
-                        mesh_local.addVertex(current);
-                        mesh_local.addVertex(right);
-                        mesh_local.addVertex(below);
-                    }
-                }
-            }
-        }
-    }
-    
-
-// TODO: reactivate this autocenter stuff
-//    /* get the center of the pointcloud */
-//    if(local_autocenter){
-//        ofVec3f sumOfAllPoints(0,0,0);
-//        vector<ofVec3f> vertices = allUserPoints.getVertices();
-//        for(int i = 0; i < vertices.size(); i++){
-//            sumOfAllPoints += vertices[i];
-//        }
-//        if(vertices.size() > 0)
-//            mesh_local_center = sumOfAllPoints / vertices.size();
-//    }
-//    
-//    // calculate the center of the remote mesh
-//    if(remote_autocenter){
-//        ofMesh allUserPoints;
-//        
-//        // put all vertices in one mesh
-//        for(int i = 0; i< NUM_MAX_USERS; i++){ allUserPoints.addVertices(remoteMeshes[i].getVertices()); }
-//        
-//        // get the center
-//        ofVec3f sumOfAllPoints(0,0,0);
-//        vector<ofVec3f> vertices = allUserPoints.getVertices();
-//        for(int i = 0; i < vertices.size(); i++){
-//            sumOfAllPoints += vertices[i];
-//        }
-//        if(vertices.size() > 0)
-//            mesh_remote_center = sumOfAllPoints / vertices.size();
-//    }
-        
-}
-
-//--------------------------------------------------------------
-void testApp::drawWireframeLocal(){
-    // draw local user(s)
-    ofPushMatrix();
-        ofScale(1, -1, -1);
-
-        // apply centering
-        ofTranslate(-mesh_local_center.x, -mesh_local_center.y, -mesh_local_center.z);
-    
-        // draw the local mesh
-        mesh_local.draw();
-    ofPopMatrix();
 }
 
 //--------------------------------------------------------------
@@ -563,9 +490,8 @@ void testApp::oscUpdate()
         
         // mesh settings
         else if (m.getAddress() == "/mesh/local/scale") { mesh_scale_local = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/mesh/local/resolution") { meshResolution_local = m.getArgAsFloat(0); }
         else if (m.getAddress() == "/mesh/remote/scale") { mesh_scale_remote = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/mesh/remote/resolution") { meshResolution_remote = m.getArgAsFloat(0); }
+
         
         // centering
         else if (m.getAddress() == "/centering/local/correction") { yCorrection_local = m.getArgAsFloat(0); xCorrection_local = m.getArgAsFloat(1); }
@@ -792,11 +718,7 @@ void testApp::oscUpdateAll(){
     updater.clear();
     updater.setAddress("/mesh/local/scale"); updater.addFloatArg(mesh_scale_local);
     oscSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/mesh/local/resolution"); updater.addFloatArg(meshResolution_local);
-    oscSender.sendMessage(updater);
-    
+        
     // centering
     updater.clear();
     updater.setAddress("/centering/local/correction"); updater.addFloatArg(yCorrection_local); updater.addFloatArg(xCorrection_local);
