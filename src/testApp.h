@@ -2,8 +2,6 @@
 
 #include "ofMain.h"
 #include "ofxOsc.h"
-#include "ofxOpenCv.h"
-#include "ofxNetwork.h"
 #include "ofxDmx.h"
 #include "ofxKinect.h"
 #include "StairvilleLEDParSpot.h"
@@ -11,20 +9,6 @@
 #include "FogMachine.h"
 #include "ofxGui.h"
 #include "meshMan.h"
-
-
-#define ADD_MESH_VERTEX_USER0 0
-#define ADD_MESH_VERTEX_USER1 1
-#define ADD_MESH_VERTEX_USER2 2
-#define ADD_MESH_VERTEX_USER3 3
-#define ADD_MESH_VERTEX_USER4 4
-#define CLEAR_MESH_USER0 5
-#define CLEAR_MESH_USER1 6
-#define CLEAR_MESH_USER2 7
-#define CLEAR_MESH_USER3 8
-#define CLEAR_MESH_USER4 9
-
-#define NUM_MAX_USERS 5
 
 class testApp : public ofBaseApp{
 
@@ -49,10 +33,6 @@ class testApp : public ofBaseApp{
     
         void drawWireframeRemote();
         void nextState();
-
-        // NETWORK FUNCTIONS
-        void sendMeshTCP(const ofMesh* mesh, int user);
-        void receiveTCP();
     
         // KINECT STUFF
         ofxKinect kinect;
@@ -76,10 +56,6 @@ class testApp : public ofBaseApp{
         bool b_overlay_in_remote = false;
         bool b_overlay_out_remote = false;
         bool b_clouds = false;
-    
-
-        ofMesh remoteMeshes[NUM_MAX_USERS];
-        ofMesh remoteMeshesTemp[NUM_MAX_USERS];
 
         ofCamera camera;
     
@@ -99,9 +75,6 @@ class testApp : public ofBaseApp{
     bool isServer = true;
     
     float lastConnectionCheck = 0;
-    
-    ofxTCPServer tcpServer;
-    ofxTCPClient tcpClient;
 
     bool connected;
     
@@ -131,7 +104,6 @@ class testApp : public ofBaseApp{
     float yCorrection_local = 0;
     float yCorrection_remote = 0;
     
-    
     ofColor colorCharacter_local = ofColor(255, 255, 255);
     ofColor colorCharacter_remote = ofColor(255, 255, 255);
     
@@ -158,4 +130,5 @@ class testApp : public ofBaseApp{
     bool showDebug = false;
     
     meshMan local_mesh;
+    meshMan remote_mesh;
 };

@@ -4,14 +4,36 @@
 //
 //  Created by Julian Adenauer on 21.08.13.
 //
-//
 
 #include "meshMan.h"
 
+//--------------------------------------------------------------
 meshMan::meshMan(){
+    // initialize the variables
     mesh_resolution = 5;
+    connected = false;
+    near_threshold = 0;
+    far_threshold = 2000;
+    depth_threshold = 55;
 }
 
+void meshMan::setupNetwork(int local_server_port, string server_ip, int remote_server_port){
+        if(tcpServer.setup(local_server_port))
+            ofLog() << "server is set up on port " << ofToString(local_server_port);
+        else "server setup failed";
+        
+        tcpServer.setMessageDelimiter("\n");
+        
+        ofLog() << "trying to establish a connection to the remote server: " << ofToString(server_ip) << ofToString(remote_server_port);
+        connected = tcpClient.setup(server_ip, remote_server_port);
+        tcpClient.setMessageDelimiter("\n");
+        
+        if(connected)
+            ofLog() << "client is connected to server " << tcpClient.getIP() << ":" << tcpClient.getPort();
+
+}
+
+//--------------------------------------------------------------
 void meshMan::updateFromKinect(ofxKinect *kinect){
     // there is a new frame and we are connected
 	if(kinect->isFrameNew()) {
@@ -67,6 +89,29 @@ void meshMan::updateFromKinect(ofxKinect *kinect){
     }
 }
 
+void meshMan::updateFromNetwork(){
+// TODO: redo this
+//    // get the data from the clients
+//    if(tcpServer.getNumClients() > 0) receiveTCP();
+//    
+//    // try to setup the connection if it is broken every 5 seconds
+//    if(!connected && (ofGetElapsedTimef() - lastConnectionCheck) > 5.0) {
+//        // versuch: tcpserver zurücksetzen
+//        // if(tcpServer. getNumClients()>0) {
+//        // disconnect the clients
+//        // for(int i=0; i<tcpServer.getNumClients(); i++) {
+//        //tcpServer.disconnectClient(i);
+//        // ofLog()<< "server disconnected client " << ofToString(i);
+//        //}
+//        //}
+//        connected = tcpClient.setup(SERVER_IP, REMOTE_SERVER_PORT);
+//        if(connected) ofLog() << "client is connected to server " << tcpClient.getIP() << ":" << tcpClient.getPort();
+//        lastConnectionCheck = ofGetElapsedTimef();
+//    }
+//    else if(!tcpClient.isConnected()){ connected = false; }
+}
+
+//--------------------------------------------------------------
 void meshMan::draw(){
     // draw local user(s)
     ofPushMatrix();
@@ -78,4 +123,71 @@ void meshMan::draw(){
     // draw the local mesh
     mesh.draw();
     ofPopMatrix();
+}
+
+//--------------------------------------------------------------
+void meshMan::sendMeshTCP(){
+    // ich schicke jetzt ein controll-float mit. ein byte würde eigentlich auch reichen, aber ich habe gerade keine lust, mit memcpy rumzuspielen
+
+        float data[4];
+        for(int i = 0; i < mesh.getNumVertices(); i++)
+        {
+            data[0] = 0; // TODO: I used to send the ID of the user here. But now with ofxKinect, this is not possible.
+            ofVec3f vertex = mesh.getVertex(i);
+            data[1] = vertex.x;
+            data[2] = vertex.y;
+            data[3] = vertex.z;
+            // just send the raw data. not compatible with other operatingsystems, though. but that doesn't really matter in this case.
+            if (connected && tcpClient.isConnected()) {
+                try { tcpClient.sendRawBytes((const char*)data, 4 * sizeof(float));}
+                catch (int e) { ofLog() << "caught an exception in sendMeshTCP: " << e; }
+            }
+        }
+        
+        // send clear message
+        data[0] = 0;//CLEAR_MESH_USER0 + user; // TODO: review this
+        data[1] = 0;//kinect.getNumTrackedUsers(); // TODO: review this part!
+        data[2] = 0;
+        data[3] = 0;
+        if (connected && tcpClient.isConnected()) {
+            try { tcpClient.sendRawBytes((const char*)data, 4 * sizeof(float)); }
+            catch (int e) { ofLog() << "caught an exception in sendMeshTCP: " << e; }
+        }
+}
+
+//--------------------------------------------------------------
+void meshMan::receiveTCP(){
+    for(int client = 0; client < tcpServer.getNumClients(); client++){
+        float buf[4];
+        try{
+            // TODO: reimplement this!
+            while(tcpServer.receiveRawBytes(client, (char*) buf, 4 * sizeof(float)) == 4 * sizeof(float)){
+//                if(buf[0] == CLEAR_MESH_USER0){ refreshRemoteMesh(0); numTrackedUsers_remote = buf[1]; }
+//                else if (buf[0] == CLEAR_MESH_USER1){ refreshRemoteMesh(1); numTrackedUsers_remote = buf[1]; }
+//                else if (buf[0] == CLEAR_MESH_USER2){ refreshRemoteMesh(2); numTrackedUsers_remote = buf[1]; }
+//                else if (buf[0] == CLEAR_MESH_USER3){ refreshRemoteMesh(3); numTrackedUsers_remote = buf[1]; }
+//                else if (buf[0] == CLEAR_MESH_USER4){ refreshRemoteMesh(4); numTrackedUsers_remote = buf[1]; }
+//                else if (buf[0] == ADD_MESH_VERTEX_USER0) addMeshVertex(buf[1], buf[2], buf[3], 0);
+//                else if (buf[0] == ADD_MESH_VERTEX_USER1) addMeshVertex(buf[1], buf[2], buf[3], 1);
+//                else if (buf[0] == ADD_MESH_VERTEX_USER2) addMeshVertex(buf[1], buf[2], buf[3], 2);
+//                else if (buf[0] == ADD_MESH_VERTEX_USER3) addMeshVertex(buf[1], buf[2], buf[3], 3);
+//                else if (buf[0] == ADD_MESH_VERTEX_USER4) addMeshVertex(buf[1], buf[2], buf[3], 4);
+            }
+        }
+        catch (int e) { ofLog() << "caught an error while receiving data over TCP: " << e; }
+    }
+}
+
+//--------------------------------------------------------------
+void meshMan::addMeshVertex(float x, float y, float z){
+    ofVec3f v;
+    v.x = x;
+    v.y = y;
+    v.z = z;
+}
+
+//--------------------------------------------------------------
+void meshMan::refreshRemoteMesh(){
+//    remoteMeshes[user] = ofMesh(remoteMeshesTemp[user]);
+//    remoteMeshesTemp[user].clear();
 }

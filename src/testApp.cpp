@@ -49,23 +49,6 @@ void testApp::setup() {
     }
     else ofLog() << "settings.config not found!";
         
-    /* SETUP NETWORK */
-    if(activate_network){
-        if(tcpServer.setup(LOCAL_SERVER_PORT))
-            ofLog() << "server is set up on port " << ofToString(LOCAL_SERVER_PORT);
-        else "server setup failed";
-        
-        tcpServer.setMessageDelimiter("\n");
-        
-        ofLog() << "trying to establish a connection to the remote server: " << ofToString(SERVER_IP) << ofToString(REMOTE_SERVER_PORT);
-        connected = tcpClient.setup(SERVER_IP, REMOTE_SERVER_PORT);
-        tcpClient.setMessageDelimiter("\n");
-        
-        if(connected)
-            ofLog() << "client is connected to server " << tcpClient.getIP() << ":" << tcpClient.getPort();
-        
-        lastConnectionCheck = ofGetElapsedTimef();
-    }
 	
     /* KINECT SETUP */
     kinect.setLed(ofxKinect::LED_OFF);
@@ -78,10 +61,9 @@ void testApp::setup() {
     // GUI
     gui.setup(); // most of the time you don't need a name but don't forget to call setup
 	gui.add(local_mesh.near_threshold.set("near threshold", 0, 0, 10000));
-    gui.add(local_mesh.far_threshold.set("far threshold", 10000, 0, 10000));
+    gui.add(local_mesh.far_threshold.set("far threshold", 2000, 0, 10000));
     gui.add(local_mesh.depth_threshold.set("depth threshold", 50, 0, 500));
-    gui.add(local_mesh.mesh_resolution.set("mesh resolution", 5, 0, 20));
-    
+    gui.add(local_mesh.mesh_resolution.set("mesh resolution", 5, 1, 20));
     
     
     /* VIDEO LAYERS */
@@ -124,11 +106,7 @@ void testApp::setup() {
     
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
     fboRemote.allocate(ofGetWidth(), ofGetHeight());
-    
-    for(int i = 0; i<NUM_MAX_USERS; i++){
-        remoteMeshes[i] = ofMesh();
-        remoteMeshesTemp[i] = ofMesh();
-    }
+
     
     
 }
@@ -137,31 +115,11 @@ void testApp::setup() {
 //--------------------------------------------------------------
 void testApp::update() {
 
-    // update the network stuff
-    if(activate_network){
-        // get the data from the clients
-        if(tcpServer.getNumClients() > 0) receiveTCP();
-        
-        // try to setup the connection if it is broken every 5 seconds
-        if(!connected && (ofGetElapsedTimef() - lastConnectionCheck) > 5) {
-            // versuch: tcpserver zurŸcksetzen
-            // if(tcpServer. getNumClients()>0) {
-                // disconnect the clients
-                // for(int i=0; i<tcpServer.getNumClients(); i++) {
-                    //tcpServer.disconnectClient(i);
-                    // ofLog()<< "server disconnected client " << ofToString(i);
-                    //}
-                //}
-            connected = tcpClient.setup(SERVER_IP, REMOTE_SERVER_PORT);
-            if(connected) ofLog() << "client is connected to server " << tcpClient.getIP() << ":" << tcpClient.getPort();
-            lastConnectionCheck = ofGetElapsedTimef();
-        }
-        else if(!tcpClient.isConnected()){ connected = false; }
-    }
-    
+    // update kinect and the mesh data
     kinect.update();
-    
     local_mesh.updateFromKinect(&kinect);
+
+    remote_mesh.updateFromNetwork(); // TODO: this function is not implemented yet
     
     oscUpdate();
     
@@ -224,7 +182,7 @@ void testApp::draw() {
     }
     
     // eigentlich ist der server relevant, aber der scheint nicht wirklich zu wissen, wie viele clients mit ihm verbunden sind (oder es wird nur langsam geupdated). deshalb gehe ich den Weg Ÿber den Client. Wenn der nicht verbunden ist, ist der Server auch nicht verbunden.
-    if(tcpClient.isConnected()){
+    if(remote_mesh.isConnected()){
         fboRemote.begin();
             ofPushStyle();
                 ofClear(0,0,0, 0);
@@ -233,7 +191,7 @@ void testApp::draw() {
                 camera.setGlobalPosition(0, 0, mesh_scale_remote);
                 camera.begin();
         
-                drawWireframeRemote();
+                remote_mesh.draw();
         
                 camera.end();
         
@@ -271,28 +229,12 @@ void testApp::draw() {
     
     ofEnableAlphaBlending();
         fboLocal.draw(xCorrection_local, -yCorrection_local);
-        if(tcpClient.isConnected()) fboRemote.draw(xCorrection_remote, -yCorrection_remote);
+        if(remote_mesh.isConnected()) fboRemote.draw(xCorrection_remote, -yCorrection_remote);
     ofDisableAlphaBlending();
 
     ofPopMatrix();
     
     gui.draw();
-}
-
-//--------------------------------------------------------------
-void testApp::drawWireframeRemote(){
-    ofPushMatrix();
-    
-    // wenn man auf den fbo malt, muss y auch gespiegelt werden
-    ofScale(1, -1, -1);
-    
-    ofTranslate(-mesh_remote_center.x, -mesh_remote_center.y, -mesh_remote_center.z);
-    for(int i=0; i < numTrackedUsers_remote; i++){
-        if(remoteMeshes[i].getNumVertices() > 10)
-            remoteMeshes[i].drawWireframe();
-    }
-    ofPopMatrix();
-
 }
 
 //--------------------------------------------------------------
@@ -391,8 +333,8 @@ void testApp::dmxUpdate(){
 
 //--------------------------------------------------------------
 void testApp::exit() {
-    tcpServer.close();
-    tcpClient.close();
+//    tcpServer.close();
+//    tcpClient.close();
     ofLog() << "server & client stopped";
     kinect.setCameraTiltAngle(0); // zero the tilt on exit
 	kinect.close();
@@ -830,81 +772,6 @@ void testApp::oscUpdateAll(){
     updater.clear();
     updater.setAddress("/spots/interaction/fadetime"); updater.addFloatArg(spotInteraction1.getFadeTime());
     oscSender.sendMessage(updater);
-
-    //connection
-    updater.clear();
-    updater.setAddress("/connection"); if(tcpClient.isConnected()) updater.addFloatArg(1); else updater.addFloatArg(0);
-    oscSender.sendMessage(updater);
 }
 
 
-//--------------------------------------------------------------
-void testApp::sendMeshTCP(const ofMesh* mesh, int user){
-    // ich schicke jetzt ein controll-float mit. ein byte wŸrde eigentlich auch reichen, aber ich habe gerade keine lust, mit memcpy rumzuspielen
-    
-    if(mesh != NULL){
-        float data[4];
-        for(int i = 0; i < mesh->getNumVertices(); i++)
-        {
-            data[0] = ADD_MESH_VERTEX_USER0 + user;
-            ofVec3f vertex = mesh->getVertex(i);
-            data[1] = vertex.x;
-            data[2] = vertex.y;
-            data[3] = vertex.z;
-            // just send the raw data. not compatible with other operatingsystems, though. but that doesn't really matter in this case.
-            if (connected && tcpClient.isConnected()) {
-                try { tcpClient.sendRawBytes((const char*)data, 4 * sizeof(float));}
-                catch (int e) { ofLog() << "caught an exception in sendMeshTCP: " << e; }
-            }
-        }
-        
-        // send clear message
-        data[0] = CLEAR_MESH_USER0 + user;
-        data[1] = 0;//kinect.getNumTrackedUsers(); // TODO: review this part!
-        data[2] = 0;
-        data[3] = 0;
-        if (connected && tcpClient.isConnected()) {
-            try { tcpClient.sendRawBytes((const char*)data, 4 * sizeof(float)); }
-            catch (int e) { ofLog() << "caught an exception in sendMeshTCP: " << e; }
-        }
-    }
-}
-
-//--------------------------------------------------------------
-void testApp::receiveTCP(){
-    for(int client = 0; client < tcpServer.getNumClients(); client++){
-        float buf[4];
-        try{
-            while(tcpServer.receiveRawBytes(client, (char*) buf, 4 * sizeof(float)) == 4 * sizeof(float)){
-                if(buf[0] == CLEAR_MESH_USER0){ refreshRemoteMesh(0); numTrackedUsers_remote = buf[1]; }
-                else if (buf[0] == CLEAR_MESH_USER1){ refreshRemoteMesh(1); numTrackedUsers_remote = buf[1]; }
-                else if (buf[0] == CLEAR_MESH_USER2){ refreshRemoteMesh(2); numTrackedUsers_remote = buf[1]; }
-                else if (buf[0] == CLEAR_MESH_USER3){ refreshRemoteMesh(3); numTrackedUsers_remote = buf[1]; }
-                else if (buf[0] == CLEAR_MESH_USER4){ refreshRemoteMesh(4); numTrackedUsers_remote = buf[1]; }
-                else if (buf[0] == ADD_MESH_VERTEX_USER0) addMeshVertex(buf[1], buf[2], buf[3], 0);
-                else if (buf[0] == ADD_MESH_VERTEX_USER1) addMeshVertex(buf[1], buf[2], buf[3], 1);
-                else if (buf[0] == ADD_MESH_VERTEX_USER2) addMeshVertex(buf[1], buf[2], buf[3], 2);
-                else if (buf[0] == ADD_MESH_VERTEX_USER3) addMeshVertex(buf[1], buf[2], buf[3], 3);
-                else if (buf[0] == ADD_MESH_VERTEX_USER4) addMeshVertex(buf[1], buf[2], buf[3], 4);
-            }
-        }
-        catch (int e) { ofLog() << "caught an error while receiving data over TCP: " << e; }
-    }
-}
-
-//--------------------------------------------------------------
-void testApp::addMeshVertex(float x, float y, float z, int user){
-    ofVec3f v;
-    v.x = x;
-    v.y = y;
-    v.z = z;
-    
-    remoteMeshesTemp[user].setMode(OF_PRIMITIVE_TRIANGLES);
-    remoteMeshesTemp[user].addVertex(v);
-}
-
-//--------------------------------------------------------------
-void testApp::refreshRemoteMesh(int user){
-    remoteMeshes[user] = ofMesh(remoteMeshesTemp[user]);
-    remoteMeshesTemp[user].clear();
-}
