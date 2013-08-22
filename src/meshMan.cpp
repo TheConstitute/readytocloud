@@ -40,6 +40,7 @@ void meshMan::updateFromKinect(ofxKinect *kinect){
         int w = 640;
         int h = 480;
         mesh.clear();
+        mesh.setMode(OF_PRIMITIVE_TRIANGLES);
         
         for(int y = 0; y < h; y += mesh_resolution) {
             for(int x = 0; x < w; x += mesh_resolution) {
@@ -113,15 +114,16 @@ void meshMan::updateFromNetwork(){
 
 //--------------------------------------------------------------
 void meshMan::draw(){
-    // draw local user(s)
     ofPushMatrix();
+    
     ofScale(1, -1, -1);
     
     // apply centering
     ofTranslate(-center.x, -center.y, -center.z);
     
     // draw the local mesh
-    mesh.draw();
+    mesh.drawWireframe();
+    
     ofPopMatrix();
 }
 
