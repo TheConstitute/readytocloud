@@ -2,13 +2,10 @@
 
 //--------------------------------------------------------------
 void testApp::setup() {
-	ofSetLogLevel(OF_LOG_VERBOSE);
+//	ofSetLogLevel(OF_LOG_VERBOSE);
     
     ofSetFrameRate(25);
     ofLogLevel(OF_LOG_WARNING);
-    
-    //changeScreenRes(1024, 768);
-
 	
     /* KINECT SETUP */
     kinect.init(false, false);      // disable video image (faster fps)
@@ -57,13 +54,13 @@ void testApp::setup() {
     light_parameters.add(ledRingInteraction.pulseMin.set("ring pulse min", 8, 0, 255));
     light_parameters.add(ledRingInteraction.pulseMax.set("ring pulse max", 255, 0, 255));
     light_parameters.add(ledRingInteraction.static_brightness.set("ring brightness", 255, 0, 255));
-        light_parameters.add(ledRingInteraction.pulseSpeed.set("pulse speed", 4, 0, 255));//TODO: diese einstellung auch auf die spots Ÿbertragen
-    light_parameters.add(spotInteraction1.pulseMin.set("spot pulse min", 20, 0, 255)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
-    light_parameters.add(spotInteraction1.pulseMax.set("spot pulse max", 160, 0, 255)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
-    light_parameters.add(spotInteraction1.static_brightness.set("spot brightness", 32, 0, 255)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
-    light_parameters.add(spotInteraction1.fadeTime.set("fade time", 2, 0, 10)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
-    light_parameters.add(spotCloud1.static_brightness.set("spot cloud brightness", 255, 0, 255)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
-    light_parameters.add(spotCloud1.fadeTime.set("cloud fade time", 3, 0, 10)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
+    light_parameters.add(ledRingInteraction.pulseSpeed.set("pulse speed", 4, 0, 255));
+    light_parameters.add(spotInteraction1.pulseMin.set("spot pulse min", 20, 0, 255));
+    light_parameters.add(spotInteraction1.pulseMax.set("spot pulse max", 160, 0, 255));
+    light_parameters.add(spotInteraction1.static_brightness.set("spot brightness", 32, 0, 255)); 
+    light_parameters.add(spotInteraction1.fadeTime.set("fade time", 2, 0, 10));
+    light_parameters.add(spotCloud1.static_brightness.set("spot cloud brightness", 255, 0, 255));
+    light_parameters.add(spotCloud1.fadeTime.set("cloud fade time", 3, 0, 10));
         
     gui.setup(); 
     gui.add(local_mesh_parameters);
@@ -74,7 +71,6 @@ void testApp::setup() {
     gui.add(light_parameters);
     
     gui.loadFromFile("settings.xml");
-    
 
     local_mesh.setupKinect(&kinect);
     remote_mesh.setupNetwork(local_port, remote_ip, remote_port);
@@ -107,15 +103,11 @@ void testApp::setup() {
     // push all settings to the ipad
     lightStateChanged = true;
     oscUpdateAll();
-    
 
-    
 //    ofHideCursor();
     
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
     fboRemote.allocate(ofGetWidth(), ofGetHeight());
-
-    
 }
 
 
@@ -236,6 +228,17 @@ void testApp::draw() {
 
 
     ofPopMatrix();
+    
+    
+    // synchronize the settings of the light pairs
+    spotInteraction1.pulseSpeed = ledRingInteraction.pulseSpeed;
+    spotInteraction2.pulseSpeed = ledRingInteraction.pulseSpeed;
+    spotInteraction2.pulseMin = spotInteraction1.pulseMin;
+    spotInteraction2.pulseMax = spotInteraction1.pulseMax;
+    spotInteraction2.static_brightness = spotInteraction1.static_brightness;
+    spotCloud2.fadeTime = spotCloud1.fadeTime;
+    spotCloud2.static_brightness = spotCloud1.static_brightness;
+    spotCloud2.fadeTime = spotCloud1.fadeTime;
     
     gui.draw();
 }
