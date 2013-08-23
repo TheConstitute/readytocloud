@@ -17,24 +17,44 @@ meshMan::meshMan(){
     depth_threshold = 55;
 }
 
-void meshMan::setupNetwork(int local_server_port, string server_ip, int remote_server_port){
-        if(tcpServer.setup(local_server_port))
-            ofLog() << "server is set up on port " << ofToString(local_server_port);
-        else "server setup failed";
-        
-        tcpServer.setMessageDelimiter("\n");
-        
-        ofLog() << "trying to establish a connection to the remote server: " << ofToString(server_ip) << ofToString(remote_server_port);
-        connected = tcpClient.setup(server_ip, remote_server_port);
-        tcpClient.setMessageDelimiter("\n");
-        
-        if(connected)
-            ofLog() << "client is connected to server " << tcpClient.getIP() << ":" << tcpClient.getPort();
+void meshMan::update(){
+    switch(mode){
+        case mode_kinect:
+            updateFromKinect();
+            break;
+        case mode_network:
+            updateFromNetwork();
+            break;
+    }
+}
 
+void meshMan::setupNetwork(int local_port, string remote_ip, int remote_port){
+    if(tcp_server.setup(local_port))
+        ofLog() << "server is set up on port " << ofToString(local_port);
+    else "server setup failed";
+    
+    tcp_server.setMessageDelimiter("\n");
+    
+    ofLog() << "trying to establish a connection to the remote server: " << ofToString(remote_ip) << ofToString(remote_port);
+    connected = tcp_client.setup(remote_ip, remote_port);
+    tcp_client.setMessageDelimiter("\n");
+    
+    if(connected)
+        ofLog() << "client is connected to server " << tcp_client.getIP() << ":" << tcp_client.getPort();
+    
+    mode = mode_network;
+}
+
+void meshMan::setupKinect(ofxKinect* kinect){
+    this->kinect = kinect;
+    mode = mode_kinect;
+    
 }
 
 //--------------------------------------------------------------
-void meshMan::updateFromKinect(ofxKinect *kinect){
+void meshMan::updateFromKinect(){
+    kinect->update();
+    
     // there is a new frame and we are connected
 	if(kinect->isFrameNew()) {
         int w = 640;
@@ -46,10 +66,13 @@ void meshMan::updateFromKinect(ofxKinect *kinect){
             for(int x = 0; x < w; x += mesh_resolution) {
                 float distance = kinect->getDistanceAt(x, y);
                 if(distance > near_threshold && distance < far_threshold) {
-                    ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-                    ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution, y);
-                    ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution);
-                    
+//                    ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+//                    ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution, y);
+//                    ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution);
+                    ofVec3f current = ofVec3f(x, y, kinect->getDistanceAt(x, y));
+                    ofVec3f right = ofVec3f(x + mesh_resolution, y, kinect->getDistanceAt(x + mesh_resolution, y));
+                    ofVec3f below = ofVec3f(x, y + mesh_resolution, kinect->getDistanceAt(x, y + mesh_resolution));
+
                     if(abs(current.distance(right)) < depth_threshold && abs(current.distance(below)) < depth_threshold){
                         mesh.addVertex(current);
                         mesh.addVertex(right);
@@ -58,6 +81,8 @@ void meshMan::updateFromKinect(ofxKinect *kinect){
                 }
             }
         }
+        
+        ofLog() << mesh.getNumVertices();
         
         // TODO: reactivate this autocenter stuff
         //    /* get the center of the pointcloud */
@@ -140,8 +165,8 @@ void meshMan::sendMeshTCP(){
             data[2] = vertex.y;
             data[3] = vertex.z;
             // just send the raw data. not compatible with other operatingsystems, though. but that doesn't really matter in this case.
-            if (connected && tcpClient.isConnected()) {
-                try { tcpClient.sendRawBytes((const char*)data, 4 * sizeof(float));}
+            if (connected && tcp_client.isConnected()) {
+                try { tcp_client.sendRawBytes((const char*)data, 4 * sizeof(float));}
                 catch (int e) { ofLog() << "caught an exception in sendMeshTCP: " << e; }
             }
         }
@@ -151,19 +176,19 @@ void meshMan::sendMeshTCP(){
         data[1] = 0;//kinect.getNumTrackedUsers(); // TODO: review this part!
         data[2] = 0;
         data[3] = 0;
-        if (connected && tcpClient.isConnected()) {
-            try { tcpClient.sendRawBytes((const char*)data, 4 * sizeof(float)); }
+        if (connected && tcp_client.isConnected()) {
+            try { tcp_client.sendRawBytes((const char*)data, 4 * sizeof(float)); }
             catch (int e) { ofLog() << "caught an exception in sendMeshTCP: " << e; }
         }
 }
 
 //--------------------------------------------------------------
 void meshMan::receiveTCP(){
-    for(int client = 0; client < tcpServer.getNumClients(); client++){
+    for(int client = 0; client < tcp_server.getNumClients(); client++){
         float buf[4];
         try{
             // TODO: reimplement this!
-            while(tcpServer.receiveRawBytes(client, (char*) buf, 4 * sizeof(float)) == 4 * sizeof(float)){
+            while(tcp_server.receiveRawBytes(client, (char*) buf, 4 * sizeof(float)) == 4 * sizeof(float)){
 //                if(buf[0] == CLEAR_MESH_USER0){ refreshRemoteMesh(0); numTrackedUsers_remote = buf[1]; }
 //                else if (buf[0] == CLEAR_MESH_USER1){ refreshRemoteMesh(1); numTrackedUsers_remote = buf[1]; }
 //                else if (buf[0] == CLEAR_MESH_USER2){ refreshRemoteMesh(2); numTrackedUsers_remote = buf[1]; }

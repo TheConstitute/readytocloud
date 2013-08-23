@@ -12,16 +12,16 @@
 #include "ofMain.h"
 #include "ofxKinect.h"
 #include "ofxNetwork.h"
-
+#include "ofxKinect.h"
 
 class meshMan {
 public:
     meshMan();
     
-    void setupNetwork(int local_server_port, string server_ip, int remote_server_port); // TODO: set parameters
+    void setupNetwork(int local_port, string remote_ip, int remote_port); // TODO: set parameters
+    void setupKinect(ofxKinect* kinect);
     
-    void updateFromKinect(ofxKinect* kinect);
-    void updateFromNetwork();
+    void update();
     
     void draw();
     
@@ -36,10 +36,17 @@ private:
     ofMesh mesh;
     ofColor color;
     ofVec3f center;
-    ofxTCPServer tcpServer;
-    ofxTCPClient tcpClient;
+    ofxTCPServer tcp_server;
+    ofxTCPClient tcp_client;
+    
+    ofxKinect* kinect;
     
     bool connected;
+    
+    enum modes{ mode_kinect, mode_network} mode;
+
+    void updateFromKinect();
+    void updateFromNetwork();
     
     void sendMeshTCP();
     void receiveTCP();
