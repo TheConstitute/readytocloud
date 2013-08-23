@@ -17,6 +17,9 @@ StairvilleLEDParSpot::StairvilleLEDParSpot(){
     channels[4] = 0;
     channels[5] = 0;
     channels[6] = 0;
+    
+    startAddress = 0;
+    firstFade = true;
 }
 
 void StairvilleLEDParSpot::setup(ofxDmx* dmx, unsigned char startAddress){

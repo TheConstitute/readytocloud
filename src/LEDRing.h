@@ -66,6 +66,9 @@ public:
     void pulseBrightness();
     void stopPulse();
     
+    ofParameter<int> pulseSpeed;
+    ofParameter<int> pulseMin, pulseMax;
+    ofParameter<int> static_brightness;
     
 private:
     ofxDmx* dmx;
@@ -78,12 +81,11 @@ private:
     float fadeDelta;
     float fadeTime = 2;
     unsigned char fadeEndValue;
-    unsigned char static_brightness = 255;
     
-    int pulseSpeed;
+
     bool firstFade = true;
     float pulseStartTime;
-    unsigned char pulseMin, pulseMax;
+
     
     void updateFade();
     void updatePulse();

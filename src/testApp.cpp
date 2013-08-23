@@ -8,62 +8,79 @@ void testApp::setup() {
     ofLogLevel(OF_LOG_WARNING);
     
     //changeScreenRes(1024, 768);
-    
-    
-    /* LOAD SETTINGS */
-    ofBuffer buffer = ofBufferFromFile("settings.config");
-    if(buffer.size()) {
-        while(buffer.isLastLine() == false) {
-            
-            // move on to the next line
-            string line = buffer.getNextLine();
-            string argument = line.substr(0, line.find(","));
-            string value = line.substr(line.find(",")+1);
-            
-            if( argument == "SERVER_IP" ){ SERVER_IP = value; }
-            else if ( argument == "LOCAL_SERVER_PORT" ) { LOCAL_SERVER_PORT = ofToInt(value);  }
-            else if ( argument == "REMOTE_SERVER_PORT" ) { REMOTE_SERVER_PORT = ofToInt(value);  }
-            else if ( argument == "ISSERVER" ) { if(value=="1") isServer = true; else isServer = false; }
 
-            else if ( argument == "PORT_OSC_CONTROL_SEND" ) { PORT_OSC_CONTROL_SEND = ofToInt(value); }
-            else if ( argument == "PORT_OSC_CONTROL_RECEIVE" ) { PORT_OSC_CONTROL_RECEIVE = ofToInt(value); }
-            else if ( argument == "IPAD_IP" ) { IPAD_IP = value; }
-            else if ( argument == "ENTTEC_PORT" ) { ENTTEC_PORT = value; }
-
-            else if ( argument == "MESH_SCALE" ) { mesh_scale_local = ofToFloat(value); mesh_scale_remote = ofToFloat(value); }
-
-            else if ( argument == "MIRROR" ) { if(value=="1") mirror = true; else mirror = false; }
-            else if ( argument == "ACTIVATE_NETWORK" ) { if(value=="1") activate_network = true; else activate_network = false; }
-
-            else if ( argument == "LED_PULSE_MIN" ) { ledRingInteraction.setPulseMin(ofToInt(value)); }
-            else if ( argument == "LED_PULSE_MAX" ) { ledRingInteraction.setPulseMax(ofToInt(value)); }
-            else if ( argument == "PULSE_SPEED" ) { ledRingInteraction.setPulseSpeed(ofToInt(value)); spotInteraction1.setPulseSpeed(ofToInt(value)); spotInteraction2.setPulseSpeed(ofToInt(value)); }
-            else if ( argument == "LED_STATIC" ) { ledRingInteraction.setStaticBrightness(ofToInt(value)); }
-            else if ( argument == "INTERACTION_PULSE_MIN" ) { spotInteraction1.setPulseMin(ofToInt(value)); spotInteraction2.setPulseMin(ofToInt(value)); }
-            else if ( argument == "INTERACTION_PULSE_MAX" ) { spotInteraction1.setPulseMax(ofToInt(value)); spotInteraction2.setPulseMax(ofToInt(value)); }
-            else if ( argument == "BRIGHTNESS_INTERACTION" ) { spotInteraction1.setStaticBrightness(ofToInt(value)); spotInteraction2.setStaticBrightness(ofToInt(value)); }
-            else if ( argument == "FADE_TIME" ) { spotInteraction1.setFadeTime(ofToInt(value)); spotInteraction2.setFadeTime(ofToInt(value)); }
-            else if ( argument == "BRIGHTNESS_CLOUD" ) { spotCloud1.setStaticBrightness(ofToInt(value)); spotCloud2.setStaticBrightness(ofToInt(value)); }
-            else if ( argument == "CLOUD_FADEIN_TIME" ) { spotCloud1.setFadeTime(ofToFloat(value)); }
-        }
-    }
-    else ofLog() << "settings.config not found!";
-        
 	
     /* KINECT SETUP */
-    kinect.setLed(ofxKinect::LED_OFF);
     kinect.init(false, false);      // disable video image (faster fps)
 	kinect.setRegistration(true);   // enable depth->video image calibration
     kinect.setCameraTiltAngle(0);
+    kinect.setLed(ofxKinect::LED_OFF);
     
     // TODO: add possibility to playback recorded kinect data
     
+    /* DMX SETUP */
+    dmx.connect(dmx_entec_port, 35);
+    spotInteraction1.setup(&dmx, 8);
+    spotInteraction2.setup(&dmx, 15);
+    spotCloud1.setup(&dmx, 22);
+    spotCloud2.setup(&dmx, 29);
+    ledRingInteraction.setup(&dmx, 2);
+    fogMachine.setup(&dmx, 1);
+    dmxUpdate();
+    
+    
     // GUI
-    gui.setup(); // most of the time you don't need a name but don't forget to call setup
-	gui.add(local_mesh.near_threshold.set("near threshold", 0, 0, 10000));
-    gui.add(local_mesh.far_threshold.set("far threshold", 2000, 0, 10000));
-    gui.add(local_mesh.depth_threshold.set("depth threshold", 50, 0, 500));
-    gui.add(local_mesh.mesh_resolution.set("mesh resolution", 5, 1, 20));
+    local_mesh_parameters.setName("local mesh parameters");
+    local_mesh_parameters.add(local_mesh.near_threshold.set("near threshold", 0, 0, 10000));
+    local_mesh_parameters.add(local_mesh.far_threshold.set("far threshold", 2000, 0, 10000));
+    local_mesh_parameters.add(local_mesh.depth_threshold.set("depth threshold", 50, 0, 500));
+    local_mesh_parameters.add(local_mesh.mesh_resolution.set("mesh resolution", 5, 1, 20));
+    local_mesh_parameters.add(local_mesh_scale.set("mesh scale local", 1700, 0, 5000));
+    
+    remote_mesh_parameters.setName("remote mesh parameters");
+    remote_mesh_parameters.add(remote_mesh_scale.set("mesh scale remote", 1700, 0, 5000));
+
+    network_parameters.setName("network parameters");
+    network_parameters.add(local_port.set("local port", 7000));
+    network_parameters.add(server_ip.set("server ip", "localhost"));
+    network_parameters.add(remote_port.set("remote port", 8000));
+    
+    osc_parameters.setName("osc parameters");
+    osc_parameters.add(osc_port_send.set("osc port send", 7001));
+    osc_parameters.add(osc_port_receive.set("osc port send", 7002));
+    osc_parameters.add(osc_ipad_ip.set("osc ipad ip", "192.168.0.101"));
+    
+    dmx_parameters.setName("dmx parameters");
+    dmx_parameters.add(dmx_entec_port.set("dmx entec port", "tty.usbserial-EN118363"));
+    
+    light_parameters.setName("light parameters");
+    light_parameters.add(ledRingInteraction.pulseMin.set("ring pulse min", 8, 0, 255));
+    light_parameters.add(ledRingInteraction.pulseMax.set("ring pulse max", 255, 0, 255));
+    light_parameters.add(ledRingInteraction.static_brightness.set("ring brightness", 255, 0, 255));
+        light_parameters.add(ledRingInteraction.pulseSpeed.set("pulse speed", 4, 0, 255));//TODO: diese einstellung auch auf die spots Ÿbertragen
+    light_parameters.add(spotInteraction1.pulseMin.set("spot pulse min", 20, 0, 255)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
+    light_parameters.add(spotInteraction1.pulseMax.set("spot pulse max", 160, 0, 255)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
+    light_parameters.add(spotInteraction1.static_brightness.set("spot brightness", 32, 0, 255)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
+    light_parameters.add(spotInteraction1.fadeTime.set("fade time", 2, 0, 10)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
+    light_parameters.add(spotCloud1.static_brightness.set("spot cloud brightness", 255, 0, 255)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
+    light_parameters.add(spotCloud1.fadeTime.set("cloud fade time", 3, 0, 10)); // TODO: diese einstellung auch auf den anderen spot Ÿbertragen
+        
+    gui.setup(); 
+    gui.add(local_mesh_parameters);
+    gui.add(remote_mesh_parameters);
+    gui.add(network_parameters);
+    gui.add(osc_parameters);
+    gui.add(dmx_parameters);
+    gui.add(light_parameters);
+    
+    gui.loadFromFile("settings.xml");
+    
+
+    local_mesh.setupKinect(&kinect);
+    remote_mesh.setupNetwork(local_port, remote_ip, remote_port);
+    
+    
+    // TODO: add all the others variables here as well and get rid of the other settings file
     
     
     /* VIDEO LAYERS */
@@ -84,23 +101,14 @@ void testApp::setup() {
     overlay_out_remote.setLoopState(OF_LOOP_NONE);
     
     /* OSC SETUP */
-    oscReceiver.setup(PORT_OSC_CONTROL_RECEIVE);    
-    oscSender.setup(IPAD_IP, PORT_OSC_CONTROL_SEND);
+    oscReceiver.setup(osc_port_receive);
+    oscSender.setup(osc_ipad_ip, osc_port_send);
     
     // push all settings to the ipad
     lightStateChanged = true;
     oscUpdateAll();
     
-    /* DMX SETUP */
-    dmx.connect(ENTTEC_PORT, 35);
-    spotInteraction1.setup(&dmx, 8);
-    spotInteraction2.setup(&dmx, 15);
-    spotCloud1.setup(&dmx, 22);
-    spotCloud2.setup(&dmx, 29);
-    ledRingInteraction.setup(&dmx, 2);
-    fogMachine.setup(&dmx, 1);
-    
-    dmxUpdate();
+
     
 //    ofHideCursor();
     
@@ -108,18 +116,15 @@ void testApp::setup() {
     fboRemote.allocate(ofGetWidth(), ofGetHeight());
 
     
-    
 }
 
 
 //--------------------------------------------------------------
 void testApp::update() {
 
-    // update kinect and the mesh data
-    kinect.update();
-    local_mesh.updateFromKinect(&kinect);
-
-    remote_mesh.updateFromNetwork(); // TODO: this function is not implemented yet
+    // update the mesh data
+    local_mesh.update();
+    remote_mesh.update();
     
     oscUpdate();
     
@@ -136,20 +141,17 @@ void testApp::update() {
 
 //--------------------------------------------------------------
 void testApp::draw() {
-    ofNoFill();
     ofPushMatrix();
-    
-    ofBackground(0, 0, 0);
+    ofBackground(0, 0, 0); // paint the background black
 	
     fboLocal.begin();
         ofPushStyle();
+
             ofClear(0,0,0, 0);
             ofSetColor(colorCharacter_local, alpha_local);
-            camera.setGlobalPosition(0, 0, mesh_scale_local);
+            camera.setGlobalPosition(0, 0, local_mesh_scale);
             camera.begin();
-    
             local_mesh.draw();
-    
             camera.end();
     
             // set alpha back to 255 when drawing the beam
@@ -188,7 +190,7 @@ void testApp::draw() {
                 ofClear(0,0,0, 0);
                 ofSetColor(colorCharacter_remote, alpha_remote);
 
-                camera.setGlobalPosition(0, 0, mesh_scale_remote);
+                camera.setGlobalPosition(0, 0, remote_mesh_scale);
                 camera.begin();
         
                 remote_mesh.draw();
@@ -231,6 +233,7 @@ void testApp::draw() {
         fboLocal.draw(xCorrection_local, -yCorrection_local);
         if(remote_mesh.isConnected()) fboRemote.draw(xCorrection_remote, -yCorrection_remote);
     ofDisableAlphaBlending();
+
 
     ofPopMatrix();
     
@@ -431,8 +434,8 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/lightState/5") { dmx_state = 5; lightStateChanged = true; }
         
         // mesh settings
-        else if (m.getAddress() == "/mesh/local/scale") { mesh_scale_local = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/mesh/remote/scale") { mesh_scale_remote = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/mesh/local/scale") { local_mesh_scale = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/mesh/remote/scale") { remote_mesh_scale = m.getArgAsFloat(0); }
 
         
         // centering
@@ -658,7 +661,7 @@ void testApp::oscUpdateAll(){
     
     // mesh settings
     updater.clear();
-    updater.setAddress("/mesh/local/scale"); updater.addFloatArg(mesh_scale_local);
+    updater.setAddress("/mesh/local/scale"); updater.addFloatArg(local_mesh_scale);
     oscSender.sendMessage(updater);
         
     // centering

@@ -31,13 +31,12 @@ class testApp : public ofBaseApp{
         void dmxUpdate();
         void updateScene();
     
-        void drawWireframeRemote();
         void nextState();
     
         // KINECT STUFF
         ofxKinect kinect;
     
-        // GUI PARAMETERS
+        // GUI 
     	ofxPanel gui;
     
         // VIDEO OVERLAYS
@@ -62,25 +61,36 @@ class testApp : public ofBaseApp{
         ofxOscReceiver oscReceiver;
         ofxOscSender oscSender;
     
-        ofVec3f mesh_local_center;
-        ofVec3f mesh_remote_center;
+    /* NETWORK PARAMETERS */
+    ofParameterGroup network_parameters;
+    ofParameter<string> server_ip;
+    ofParameter<int> local_port, remote_port;
+    ofParameter<string> remote_ip;
     
-    /* NETWORK SETTINGS */
-    int PORT_OSC_CONTROL_SEND = 7001;
-    int PORT_OSC_CONTROL_RECEIVE = 7002;
-    string IPAD_IP = "192.168.0.101";
-    string SERVER_IP = "localhost";
-    int LOCAL_SERVER_PORT = 7000;
-    int REMOTE_SERVER_PORT = 8000;
-    bool isServer = true;
+    ofParameterGroup osc_parameters;
+    ofParameter<int> osc_port_send, osc_port_receive;
+    ofParameter<string> osc_ipad_ip;
     
-    float lastConnectionCheck = 0;
+    ofParameterGroup dmx_parameters;
+    ofParameter<string> dmx_entec_port;
+    
 
-    bool connected;
+    /* RENDERING PARAMETERS */
+    ofParameterGroup local_mesh_parameters;
+    ofParameter<float> local_mesh_scale;
+    
+    ofParameterGroup remote_mesh_parameters;
+    ofParameter<float> remote_mesh_scale;
+    
+    ofParameter<bool> mirror_scene;
+    
+    
+    /* LIGHT PARAMETERS */
+    ofParameterGroup light_parameters;
+    
     
     /* DMX */
    	ofxDmx dmx;
-    string ENTTEC_PORT = "tty.usbserial-EN118363";
 
     /* lights */
     StairvilleLEDParSpot spotInteraction1, spotInteraction2, spotCloud1, spotCloud2;
@@ -94,15 +104,17 @@ class testApp : public ofBaseApp{
     bool firstFrame_local = false;
     bool firstFrame_remote = false;
     
-    /* SETTINGS */
+    
     bool local_autocenter = true;
     bool remote_autocenter = false;
-    ofParameter<float> mesh_scale_local = 1500;
-    float mesh_scale_remote = 1500;
+
     float xCorrection_local = 0;
     float xCorrection_remote = 0;
     float yCorrection_local = 0;
     float yCorrection_remote = 0;
+    
+    ofVec3f mesh_local_center;
+    ofVec3f mesh_remote_center;
     
     ofColor colorCharacter_local = ofColor(255, 255, 255);
     ofColor colorCharacter_remote = ofColor(255, 255, 255);
