@@ -933,10 +933,10 @@
 			children = (
 				B95F9D0D17C6286E002BE830 /* dmxDevices */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
-				E4B69E1E0A3A1BDC003C02F2 /* testApp.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* testApp.h */,
-				B911300217C4D7B30098C4B2 /* meshMan.cpp */,
+				E4B69E1E0A3A1BDC003C02F2 /* testApp.cpp */,
 				B911300317C4D7B30098C4B2 /* meshMan.h */,
+				B911300217C4D7B30098C4B2 /* meshMan.cpp */,
 			);
 			path = src;
 			sourceTree = SOURCE_ROOT;
