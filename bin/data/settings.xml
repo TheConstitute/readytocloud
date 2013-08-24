@@ -4,7 +4,7 @@
 		<far_threshold>2000</far_threshold>
 		<depth_threshold>50</depth_threshold>
 		<mesh_resolution>5</mesh_resolution>
-		<mesh_scale_local>1700</mesh_scale_local>
+		<mesh_scale_local>0</mesh_scale_local>
 	</local_mesh_parameters>
 	<remote_mesh_parameters>
 		<mesh_scale_remote>1700</mesh_scale_remote>
@@ -33,4 +33,5 @@
 		<spot_cloud_brightness>255</spot_cloud_brightness>
 		<cloud_fade_time>3</cloud_fade_time>
 	</light_parameters>
+<group/>
 </group>
