@@ -38,6 +38,8 @@ class testApp : public ofBaseApp{
     
         // GUI 
     	ofxPanel gui;
+        bool draw_gui;
+
     
         // VIDEO OVERLAYS
         ofVideoPlayer overlay_in_local;
@@ -143,4 +145,7 @@ class testApp : public ofBaseApp{
     
     meshMan local_mesh;
     meshMan remote_mesh;
+    
+    // TEST
+    ofParameter<float> fov;
 };

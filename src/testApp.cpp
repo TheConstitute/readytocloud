@@ -30,9 +30,11 @@ void testApp::setup() {
     local_mesh_parameters.setName("local mesh parameters");
     local_mesh_parameters.add(local_mesh.near_threshold.set("near threshold", 0, 0, 10000));
     local_mesh_parameters.add(local_mesh.far_threshold.set("far threshold", 2000, 0, 10000));
-    local_mesh_parameters.add(local_mesh.depth_threshold.set("depth threshold", 50, 0, 500));
+    local_mesh_parameters.add(local_mesh.depth_threshold_min.set("depth threshold min", 10, 0, 500));
+    local_mesh_parameters.add(local_mesh.depth_threshold_max.set("depth threshold max", 50, 0, 500));
     local_mesh_parameters.add(local_mesh.mesh_resolution.set("mesh resolution", 5, 1, 20));
-    local_mesh_parameters.add(local_mesh_scale.set("mesh scale local", 1700, 0, 5000));
+    local_mesh_parameters.add(local_mesh_scale.set("mesh scale local", 1700, -5000, 5000));
+    local_mesh_parameters.add(fov.set("camera FOV", 60, 1, 180));
     
     remote_mesh_parameters.setName("remote mesh parameters");
     remote_mesh_parameters.add(remote_mesh_scale.set("mesh scale remote", 1700, 0, 5000));
@@ -108,6 +110,7 @@ void testApp::setup() {
     
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
     fboRemote.allocate(ofGetWidth(), ofGetHeight());
+    
 }
 
 
@@ -142,6 +145,7 @@ void testApp::draw() {
             ofClear(0,0,0, 0);
             ofSetColor(colorCharacter_local, alpha_local);
             camera.setGlobalPosition(0, 0, local_mesh_scale);
+            camera.setFov(fov);
             camera.begin();
             local_mesh.draw();
             camera.end();
@@ -240,7 +244,8 @@ void testApp::draw() {
     spotCloud2.static_brightness = spotCloud1.static_brightness;
     spotCloud2.fadeTime = spotCloud1.fadeTime;
     
-    gui.draw();
+    if(draw_gui)
+        gui.draw();
 }
 
 //--------------------------------------------------------------
@@ -415,6 +420,9 @@ void testApp::keyPressed (int key) {
                         
         case 'd':
             showDebug = !showDebug;
+            break;
+        case 'h':
+            draw_gui = !draw_gui;
             break;
     }
 }
