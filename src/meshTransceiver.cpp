@@ -21,14 +21,13 @@ void meshTransceiver::setup(int local_server_port, string server_ip, int remote_
     this->server_ip = server_ip;
     this->remote_server_port = remote_server_port;
     
+    // setup the local server
     if(tcp_server.setup(local_server_port))
         ofLog() << "server is set up on port " << ofToString(local_server_port);
     else "server setup failed";
-    
     tcp_server.setMessageDelimiter("\n");
     
     connectToRemoteHost();
-    
 }
 
 void meshTransceiver::connectToRemoteHost(){

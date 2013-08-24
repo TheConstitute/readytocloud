@@ -42,6 +42,7 @@
 		ADE367465D2A8EBAD4C7A8D9 /* IpEndpointName.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ADD194746185E2DA11468377 /* IpEndpointName.cpp */; };
 		B266578FC55D23BFEBC042E7 /* ofxGuiGroup.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ECF8674C7975F1063C5E30CA /* ofxGuiGroup.cpp */; };
 		B56FE57CC35806596D38118C /* ofxSliderGroup.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 802251BAF1B35B1D67B32FD0 /* ofxSliderGroup.cpp */; };
+		B9066E1E17C8F03E00507F67 /* meshTransceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9066E1C17C8F03E00507F67 /* meshTransceiver.cpp */; };
 		B9112FEF17C4C2D20098C4B2 /* ofxDmx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9112FE717C4C2D20098C4B2 /* ofxDmx.cpp */; };
 		B9112FFF17C4D0C80098C4B2 /* FogMachine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9112FF917C4D0C80098C4B2 /* FogMachine.cpp */; };
 		B911300017C4D0C80098C4B2 /* LEDRing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9112FFB17C4D0C80098C4B2 /* LEDRing.cpp */; };
@@ -234,6 +235,8 @@
 		B8427966039B53A0FE69C1F0 /* cxcore.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = cxcore.h; path = ../../../addons/ofxOpenCv/libs/opencv/include/opencv/cxcore.h; sourceTree = SOURCE_ROOT; };
 		B87C60311EC1FE841C1ECD89 /* ofxLabel.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxLabel.h; path = ../../../addons/ofxGui/src/ofxLabel.h; sourceTree = SOURCE_ROOT; };
 		B8A2CBF3E24E6E5026B13A90 /* ofxBase3DVideo.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxBase3DVideo.h; path = ../../../addons/ofxKinect/src/ofxBase3DVideo.h; sourceTree = SOURCE_ROOT; };
+		B9066E1C17C8F03E00507F67 /* meshTransceiver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = meshTransceiver.cpp; sourceTree = "<group>"; };
+		B9066E1D17C8F03E00507F67 /* meshTransceiver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = meshTransceiver.h; sourceTree = "<group>"; };
 		B9112FE717C4C2D20098C4B2 /* ofxDmx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxDmx.cpp; sourceTree = "<group>"; };
 		B9112FE817C4C2D20098C4B2 /* ofxDmx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxDmx.h; sourceTree = "<group>"; };
 		B9112FF917C4D0C80098C4B2 /* FogMachine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FogMachine.cpp; sourceTree = "<group>"; };
@@ -931,6 +934,8 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				B9066E1C17C8F03E00507F67 /* meshTransceiver.cpp */,
+				B9066E1D17C8F03E00507F67 /* meshTransceiver.h */,
 				B95F9D0D17C6286E002BE830 /* dmxDevices */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* testApp.h */,
@@ -1156,6 +1161,7 @@
 				B911300017C4D0C80098C4B2 /* LEDRing.cpp in Sources */,
 				B911300117C4D0C80098C4B2 /* StairvilleLEDParSpot.cpp in Sources */,
 				B911300417C4D7B30098C4B2 /* meshMan.cpp in Sources */,
+				B9066E1E17C8F03E00507F67 /* meshTransceiver.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
