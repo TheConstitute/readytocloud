@@ -74,11 +74,11 @@ void testApp::setup() {
     
     gui.loadFromFile("settings.xml");
 
-    local_mesh.setupKinect(&kinect);
-    remote_mesh.setupNetwork(local_port, remote_ip, remote_port);
+     
+    mesh_transceiver.setup(local_port, server_ip, remote_port);
     
-    
-    // TODO: add all the others variables here as well and get rid of the other settings file
+    local_mesh.setup(&mesh_transceiver, &kinect);
+    remote_mesh.setup(&mesh_transceiver);
     
     
     /* VIDEO LAYERS */

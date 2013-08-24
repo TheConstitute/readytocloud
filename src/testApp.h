@@ -146,6 +146,8 @@ class testApp : public ofBaseApp{
     meshMan local_mesh;
     meshMan remote_mesh;
     
+    meshTransceiver mesh_transceiver;
+    
     // TEST
     ofParameter<float> fov;
 };

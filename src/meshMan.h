@@ -13,13 +13,13 @@
 #include "ofxKinect.h"
 #include "ofxNetwork.h"
 #include "ofxKinect.h"
+#include "meshTransceiver.h"
 
 class meshMan {
 public:
     meshMan();
     
-    void setupNetwork(int local_port, string remote_ip, int remote_port); // TODO: set parameters
-    void setupKinect(ofxKinect* kinect);
+    void setup(meshTransceiver* transceiver, ofxKinect* kinect = NULL);
     
     void update();
     
@@ -37,9 +37,8 @@ private:
     ofMesh mesh;
     ofColor color;
     ofVec3f center;
-    ofxTCPServer tcp_server;
-    ofxTCPClient tcp_client;
     
+    meshTransceiver* transceiver;
     ofxKinect* kinect;
     
     bool connected;
@@ -49,8 +48,6 @@ private:
     void updateFromKinect();
     void updateFromNetwork();
     
-    void sendMeshTCP();
-    void receiveTCP();
     void addMeshVertex(float x, float y, float z);
     void refreshRemoteMesh();
 
