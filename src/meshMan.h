@@ -26,10 +26,11 @@ public:
     void draw();
     
     ofParameter<float> near_threshold, far_threshold;
-    ofParameter<float> depth_threshold;
+    ofParameter<float> depth_threshold_max;
+    ofParameter<float> depth_threshold_min;
     ofParameter<int> mesh_resolution;
     
-    inline bool isConnected(){return connected;}
+    bool isConnected(){return connected;}
     
     
 private:

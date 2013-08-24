@@ -14,7 +14,8 @@ meshMan::meshMan(){
     connected = false;
     near_threshold = 0;
     far_threshold = 2000;
-    depth_threshold = 55;
+    depth_threshold_max = 55;
+    depth_threshold_min = 10;
 }
 
 void meshMan::update(){
@@ -55,28 +56,55 @@ void meshMan::setupKinect(ofxKinect* kinect){
 void meshMan::updateFromKinect(){
     kinect->update();
     
+    bool render_quads = true;
+    
+
     // there is a new frame and we are connected
 	if(kinect->isFrameNew()) {
         int w = 640;
         int h = 480;
         mesh.clear();
-        mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-        
-        for(int y = 0; y < h; y += mesh_resolution) {
-            for(int x = 0; x < w; x += mesh_resolution) {
-                float distance = kinect->getDistanceAt(x, y);
-                if(distance > near_threshold && distance < far_threshold) {
-//                    ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-//                    ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution, y);
-//                    ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution);
-                    ofVec3f current = ofVec3f(x, y, kinect->getDistanceAt(x, y));
-                    ofVec3f right = ofVec3f(x + mesh_resolution, y, kinect->getDistanceAt(x + mesh_resolution, y));
-                    ofVec3f below = ofVec3f(x, y + mesh_resolution, kinect->getDistanceAt(x, y + mesh_resolution));
 
-                    if(abs(current.distance(right)) < depth_threshold && abs(current.distance(below)) < depth_threshold){
-                        mesh.addVertex(current);
-                        mesh.addVertex(right);
-                        mesh.addVertex(below);
+
+        if(!render_quads){
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
+            for(int y = 0; y < h; y += mesh_resolution) {
+                for(int x = 0; x < w; x += mesh_resolution) {
+                    float distance = kinect->getDistanceAt(x, y);
+                    if(distance > near_threshold && distance < far_threshold) {
+                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution, y);
+                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution);
+    //                    ofVec3f current = ofVec3f(x, y, kinect->getDistanceAt(x, y));
+    //                    ofVec3f right = ofVec3f(x + mesh_resolution, y, kinect->getDistanceAt(x + mesh_resolution, y));
+    //                    ofVec3f below = ofVec3f(x, y + mesh_resolution, kinect->getDistanceAt(x, y + mesh_resolution));
+
+                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max){
+                            mesh.addVertex(current);
+                            mesh.addVertex(right);
+                            mesh.addVertex(below);
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            mesh.setMode(OF_PRIMITIVE_QUADS);
+            for(int y = 0; y < h; y += mesh_resolution) {
+                for(int x = 0; x < w; x += mesh_resolution) {
+                    float distance = kinect->getDistanceAt(x, y);
+                    if(distance > near_threshold && distance < far_threshold) {
+                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution, y);
+                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution);
+                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution, y + mesh_resolution);
+                        
+                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
+                            mesh.addVertex(current);
+                            mesh.addVertex(right);
+                            mesh.addVertex(rightbelow);
+                            mesh.addVertex(below);
+                        }
                     }
                 }
             }
