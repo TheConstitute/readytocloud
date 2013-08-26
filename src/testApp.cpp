@@ -184,37 +184,6 @@ void testApp::draw() {
             alpha_local+=7;
         else alpha_local=255;
     }
-    
-    // eigentlich ist der server relevant, aber der scheint nicht wirklich zu wissen, wie viele clients mit ihm verbunden sind (oder es wird nur langsam geupdated). deshalb gehe ich den Weg Ÿber den Client. Wenn der nicht verbunden ist, ist der Server auch nicht verbunden.
-    if(remote_mesh.isConnected()){
-        fboRemote.begin();
-            ofPushStyle();
-                ofClear(0,0,0, 0);
-                ofSetColor(colorCharacter_remote, alpha_remote);
-
-                camera.setGlobalPosition(0, 0, remote_mesh_scale);
-                camera.begin();
-        
-                remote_mesh.draw();
-        
-                camera.end();
-        
-                // set alpha back to 255 when drawing the beam
-                ofSetColor(colorCharacter_remote, 255);
-                if(b_overlay_in_remote){
-                    ofEnableAlphaBlending();
-                    overlay_in_remote.draw(0,0, ofGetWidth(), ofGetHeight());
-                    ofDisableAlphaBlending();
-                    firstFrame_remote = false;
-                }
-                if(b_overlay_out_remote){
-                    ofEnableAlphaBlending();
-                    overlay_out_remote.draw(0,0, ofGetWidth(), ofGetHeight());
-                    ofDisableAlphaBlending();
-                }
-            ofPopStyle();
-        fboRemote.end();
-    }
 
     
     if(!fadeAlpha_remote && ofGetElapsedTimef() - fadeStartTime_remote > 2)
@@ -253,8 +222,11 @@ void testApp::draw() {
     if(draw_gui){
         local_mesh.drawDebug();
         gui.draw();
+        ofDrawBitmapString("received: \t" + ofToString(mesh_transceiver.getNumBytesReceived()), 10, ofGetHeight() - 30);
+        ofDrawBitmapString("sent: \t" + ofToString(mesh_transceiver.getNumBytesSent()), 10, ofGetHeight() - 15);
     }
     
+
 
 }
 
