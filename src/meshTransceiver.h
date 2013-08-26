@@ -64,6 +64,8 @@ private:
     
 //    int bit_index;
 
+    const char* data_start_id = "mesh";
+    
     ofxTCPServer tcp_server;
     ofxTCPClient tcp_client;
     
@@ -83,7 +85,7 @@ private:
     
     int buffer_index;
     
-    std::vector<unsigned char> buffer;
+    vector<unsigned char> buffer;
 };
 
 #endif

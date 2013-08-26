@@ -13,9 +13,11 @@
 meshTransceiver::meshTransceiver(void)
 {
     connected = false;
+    
     calcCoordTransform();
+    
+    last_connection_check = -1000.0; // make sure that the connection is checked on startup
 }
-
 
 void meshTransceiver::setup(int local_server_port, string server_ip, int remote_server_port){
     this->server_ip = server_ip;
@@ -30,63 +32,124 @@ void meshTransceiver::setup(int local_server_port, string server_ip, int remote_
     connectToRemoteHost();
 }
 
+
 void meshTransceiver::connectToRemoteHost(){
-    ofLog() << "trying to establish a connection to the remote server: " << ofToString(server_ip) << ofToString(remote_server_port);
-    connected = tcp_client.setup(server_ip, remote_server_port);
-    tcp_client.setMessageDelimiter("\n");
-    
-    if(connected)
-        ofLog() << "client is connected to server " << tcp_client.getIP() << ":" << tcp_client.getPort();
-    
-    last_connection_check = ofGetElapsedTimef();
+    if(ofGetElapsedTimef() - last_connection_check > 5.0){
+        ofLog() << "trying to establish a connection to the remote server: " << ofToString(server_ip) << ofToString(remote_server_port);
+        connected = tcp_client.setup(server_ip, remote_server_port);
+        tcp_client.setMessageDelimiter("\n");
+        
+        if(connected){
+            ofLog() << "client is connected to server " << tcp_client.getIP() << ":" << tcp_client.getPort();
+        }
+        
+        last_connection_check = ofGetElapsedTimef();
+    }
 }
 
+	
 bool meshTransceiver::send(ofMesh *mesh)
 {
     this->mesh = mesh;
     
-    if (connected && tcp_client.isConnected()) {
+    if (connected) {
         encode();
         
         unsigned int countBytes = buffer_index;
-        ofLog() << "sent " << countBytes << " bytes";
+        bool send_succeeded = tcp_client.sendRawBytes(data_start_id, strlen(data_start_id));
+
+        send_succeeded = send_succeeded && tcp_client.sendRawBytes((const char*)&countBytes, sizeof(unsigned int));
+        send_succeeded = send_succeeded && tcp_client.sendRawBytes((const char*)buffer.data(), countBytes);
         
-        try
-        {
-            tcp_client.sendRawBytes((const char*)&countBytes, sizeof(unsigned int));
-            tcp_client.sendRawBytes((const char*)buffer.data(), countBytes);
+        if(send_succeeded){
+            ofLog() << "successfully sent " << countBytes << " bytes";
             return true;
         }
-        catch (int e) { ofLog() << "caught an tcp-exception in meshTransceiver::send()" << e; }
+        else if (!tcp_client.isConnected())
+            connected = false;
     }
+    else{
+        connectToRemoteHost();
+    }
+    
     return false;
+
 }
+
+
+/*
+ if (m_hSocket == INVALID_SOCKET) return(SOCKET_ERROR);
+ 
+ if (m_dwTimeoutSend	!= NO_TIMEOUT)
+ {
+ fd_set fd;
+ FD_ZERO(&fd);
+ FD_SET(m_hSocket, &fd);
+ timeval	tv=	{m_dwTimeoutSend, 0};
+ if(select(m_hSocket+1,&fd,NULL,NULL,&tv)== 0)
+ {
+ return(SOCKET_TIMEOUT);
+ }
+ */
 
 bool meshTransceiver::receive(ofMesh *mesh)
 {
-    mesh->clear();
+    this->mesh = mesh;
     
-    ofLog() << "receive() called";
-    if(!connected && ofGetElapsedTimef() - last_connection_check > 5.0)
-        connectToRemoteHost();
+    int ret;
     
-    if (tcp_server.getNumClients() == 0) {
-        ofLog() << "tcp_server.getNumClients() == 0";
-        return false;
-    }
-    
-    unsigned int countBytes;
-    
-    try {
-        ofLog() << tcp_server.receiveRawBytes(0 , (char *)&countBytes, sizeof(unsigned int)); // (may be incompatible with other OS!)
+    for(int client = 0; client < tcp_server.getLastID(); client++) {
+		if( !tcp_server.isClientConnected(client) ) continue;
+        
+        unsigned int countBytes;
+        
+        // search for start-id of data
+        char strbuf[256];
+        int n = strlen(data_start_id);
+        
+        ret = tcp_server.receiveRawBytes(client, strbuf, n);
+        if (ret != n) return false;
+        
+        int test = 0;
+        
+        while (strncmp(strbuf, data_start_id, n) != 0)
+        {
+            memcpy(strbuf, &(strbuf[1]), n-1);
+            
+            ret = tcp_server.receiveRawBytes(client, &(strbuf[n-1]), 1);
+            if (ret != 1) return false;
+            
+            test++;
+        }
+        //ofLog() << "found signature after " << test << " bytes (receive)	";
+ 
+        
+        // read number of bytes
+        ret = tcp_server.receiveRawBytes(client , (char *)&countBytes, sizeof(unsigned int)); // (may be incompatible with other OS!)
+        if (ret != sizeof(unsigned int)) return false;
+        
         if (buffer.size() < countBytes) buffer.resize(countBytes);
-        ofLog() << "received " << tcp_server.receiveRawBytes(0 , (char *)buffer.data(), countBytes);
+        
+        // read data
+        int i = 0;
+        do {
+            ret = tcp_server.receiveRawBytes(client , (char *)(buffer.data() + i), countBytes - i);
+            if (ret == SOCKET_TIMEOUT || ret == SOCKET_ERROR)
+            {
+                if (ret == SOCKET_TIMEOUT) ofLog() << "meshTransceiver: Socket timeout while receiving mesh";
+                else ofLog() << "meshTransceiver: Socket error while receiving mesh";
+                return false;
+            }
+            else i += ret;
+        } while (i < countBytes);
+        
+        ofLog() << "received " << countBytes << " bytes";
+        
         decode(countBytes);
-        ofLog() << "should have received " << countBytes << " bytes";
+
         return true;
     }
-    catch (int e) { ofLog() << "caught an tcp-exception in meshTransceiver::receive() " << e; }
-    return false;
+
 }
 
 /* 
@@ -207,16 +270,21 @@ void meshTransceiver::encVector(ofVec3f &vec)
 
 void meshTransceiver::decode(int size)
 {
+    //ofLog() << "decode(" << size << ") called";
+    
     if (size == 0)
         return;
+
+    mesh->clear();
+
     
     buffer_index = 0;
     
-    //mesh->setMode((ofPrimitiveMode)decReducedInt()); //TODO: wieder rein nehmen
-    decReducedInt();
-    
-    
+    mesh->setMode((ofPrimitiveMode)decReducedInt());
+
     int numVerts = decReducedInt();
+    
+    //ofLog() << "decode: numVerts = " << numVerts;
     
     ofVec3f vertex;
     
