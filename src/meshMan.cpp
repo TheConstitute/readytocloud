@@ -10,7 +10,8 @@
 //--------------------------------------------------------------
 meshMan::meshMan(){
     // initialize the variables
-    mesh_resolution = 5;
+    mesh_resolution_x = 5;
+    mesh_resolution_y = 5;
     connected = false;
     near_threshold = 0;
     far_threshold = 2000;
@@ -50,8 +51,6 @@ void meshMan::setup(meshTransceiver* transceiver, ofxKinect* kinect){
 //--------------------------------------------------------------
 void meshMan::updateFromKinect(){
     kinect->update();
-    
-    
 
     // there is a new frame and we are connected
 	if(kinect->isFrameNew()) {
@@ -62,13 +61,13 @@ void meshMan::updateFromKinect(){
 
         if(mesh_mode == mesh_mode_triangles){
             mesh.setMode(OF_PRIMITIVE_TRIANGLES); 
-            for(int y = 0; y < h - mesh_resolution; y += mesh_resolution) {
-                for(int x = 0; x < w - mesh_resolution; x += mesh_resolution) {
+            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
+                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
                     float distance = kinect->getDistanceAt(x, y);
                     if(distance > near_threshold && distance < far_threshold) {
                         ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution, y);
-                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution);
+                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
+                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
     //                    ofVec3f current = ofVec3f(x, y, kinect->getDistanceAt(x, y));
     //                    ofVec3f right = ofVec3f(x + mesh_resolution, y, kinect->getDistanceAt(x + mesh_resolution, y));
     //                    ofVec3f below = ofVec3f(x, y + mesh_resolution, kinect->getDistanceAt(x, y + mesh_resolution));
@@ -84,14 +83,14 @@ void meshMan::updateFromKinect(){
         }
         else if (mesh_mode == mesh_mode_quads){
             mesh.setMode(OF_PRIMITIVE_QUADS);
-            for(int y = 0; y < h - mesh_resolution; y += mesh_resolution) {
-                for(int x = 0; x < w - mesh_resolution; x += mesh_resolution) {
+            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
+                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
                     float distance = kinect->getDistanceAt(x, y);
                     if(distance > near_threshold && distance < far_threshold) {
                         ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution, y);
-                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution);
-                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution, y + mesh_resolution);
+                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
+                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
+                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
                         
                         if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
                             mesh.addVertex(current);
@@ -107,12 +106,12 @@ void meshMan::updateFromKinect(){
             mesh.setMode(OF_PRIMITIVE_LINES);
             
             // make the horizontal lines
-            for(int y = 0; y < h - mesh_resolution; y+= mesh_resolution) {
-                for(int x = 0; x < w; x++) {
+            for(int y = 0; y < h - mesh_resolution_y; y+= mesh_resolution_y) {
+                for(int x = 0; x < w - mesh_resolution_x; x+=mesh_resolution_x) {
                     ofVec3f current = kinect->getWorldCoordinateAt(x, y);
                     
                     if(current.z > near_threshold && current.z < far_threshold){
-                        ofVec3f right = kinect->getWorldCoordinateAt(x + 1, y);
+                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
                         if(abs(current.z - right.z) < depth_threshold_max) {
                             mesh.addVertex(current);
                             mesh.addVertex(right);

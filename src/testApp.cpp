@@ -33,7 +33,8 @@ void testApp::setup() {
     local_mesh_parameters.add(local_mesh.far_threshold.set("far threshold", 2000, 0, 10000));
     local_mesh_parameters.add(local_mesh.depth_threshold_min.set("depth threshold min", 10, 0, 500));
     local_mesh_parameters.add(local_mesh.depth_threshold_max.set("depth threshold max", 50, 0, 500));
-    local_mesh_parameters.add(local_mesh.mesh_resolution.set("mesh resolution", 5, 1, 20));
+    local_mesh_parameters.add(local_mesh.mesh_resolution_x.set("mesh resolution x", 5, 1, 20));
+    local_mesh_parameters.add(local_mesh.mesh_resolution_y.set("mesh resolution y", 5, 1, 20));
     local_mesh_parameters.add(local_mesh_scale.set("mesh scale local", 1700, -5000, 5000));
     local_mesh_parameters.add(fov.set("camera FOV", 60, 1, 180));
     local_mesh_parameters.add(local_mesh.cv_near_threshold.set("cv near threshold", 0, 0, 255));
