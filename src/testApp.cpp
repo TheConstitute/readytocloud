@@ -152,6 +152,7 @@ void testApp::draw() {
             camera.begin();
             local_mesh.draw();
             local_mesh.drawContour();
+            remote_mesh.draw();
             camera.end();
     
             // set alpha back to 255 when drawing the beam
