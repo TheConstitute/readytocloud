@@ -128,7 +128,14 @@ bool meshTransceiver::receive(ofMesh *mesh)
         ret = tcp_server.receiveRawBytes(client , (char *)&countBytes, sizeof(unsigned int)); // (may be incompatible with other OS!)
         if (ret != sizeof(unsigned int)) return false;
         
-        if (buffer.size() < countBytes) buffer.resize(countBytes);
+        // make sure that we don't get a malloc error in case the number is far too high
+        if(countBytes < 100000){
+            if (buffer.size() < countBytes) buffer.resize(countBytes);
+        }
+        else{
+            ofLog() << "meshTransceiver: " << countBytes << " exceeds limit of 100.000 bytes for receiving";
+            return false;
+        }
         
         // read data
         int i = 0;
