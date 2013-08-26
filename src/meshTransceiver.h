@@ -26,8 +26,12 @@ public:
     bool send(ofMesh *mesh);
     bool receive(ofMesh *mesh);
     
+    void disconnect();
+    
     int getNumBytesReceived();
     int getNumBytesSent();
+    
+    bool isConnected(){ return connected;}
     
 private:
     

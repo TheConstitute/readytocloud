@@ -336,3 +336,9 @@ int meshTransceiver::decVector(ofVec3f &vec)
 
 int meshTransceiver::getNumBytesReceived(){ return num_bytes_received; }
 int meshTransceiver::getNumBytesSent() { return num_bytes_sent; }
+
+void meshTransceiver::disconnect(){
+    tcp_server.close();
+    tcp_client.close();
+    connected = false;
+}

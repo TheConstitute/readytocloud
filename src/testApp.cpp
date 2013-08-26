@@ -8,9 +8,9 @@ void testApp::setup() {
     ofLogLevel(OF_LOG_WARNING);
 	
     /* KINECT SETUP */
-    //kinect.init(false, false);      // disable video image (faster fps)
-    kinect.init();
 	kinect.setRegistration(true);   // enable depth->video image calibration
+    kinect.init();
+    kinect.open();
     kinect.setCameraTiltAngle(0);
     kinect.setLed(ofxKinect::LED_OFF);
     
@@ -205,9 +205,7 @@ void testApp::draw() {
         if(remote_mesh.isConnected()) fboRemote.draw(xCorrection_remote, -yCorrection_remote);
     ofDisableAlphaBlending();
 
-
     ofPopMatrix();
-    
     
     // synchronize the settings of the light pairs
     spotInteraction1.pulseSpeed = ledRingInteraction.pulseSpeed;
@@ -222,12 +220,10 @@ void testApp::draw() {
     if(draw_gui){
         local_mesh.drawDebug();
         gui.draw();
-        ofDrawBitmapString("received: \t" + ofToString(mesh_transceiver.getNumBytesReceived()), 10, ofGetHeight() - 30);
-        ofDrawBitmapString("sent: \t" + ofToString(mesh_transceiver.getNumBytesSent()), 10, ofGetHeight() - 15);
+        ofDrawBitmapString("r: \t" + ofToString(mesh_transceiver.getNumBytesReceived()), 10, ofGetHeight() - 45);
+        ofDrawBitmapString("s: \t" + ofToString(mesh_transceiver.getNumBytesSent()), 10, ofGetHeight() - 30);
+        ofDrawBitmapString("is connected: \t" + ofToString(mesh_transceiver.isConnected()), 10, ofGetHeight() - 15);
     }
-    
-
-
 }
 
 //--------------------------------------------------------------
@@ -328,6 +324,7 @@ void testApp::dmxUpdate(){
 void testApp::exit() {
 //    tcpServer.close();
 //    tcpClient.close();
+    mesh_transceiver.disconnect();
     ofLog() << "server & client stopped";
     kinect.setCameraTiltAngle(0); // zero the tilt on exit
 	kinect.close();
