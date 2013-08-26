@@ -8,7 +8,8 @@ void testApp::setup() {
     ofLogLevel(OF_LOG_WARNING);
 	
     /* KINECT SETUP */
-    kinect.init(false, false);      // disable video image (faster fps)
+    //kinect.init(false, false);      // disable video image (faster fps)
+    kinect.init();
 	kinect.setRegistration(true);   // enable depth->video image calibration
     kinect.setCameraTiltAngle(0);
     kinect.setLed(ofxKinect::LED_OFF);
@@ -35,6 +36,8 @@ void testApp::setup() {
     local_mesh_parameters.add(local_mesh.mesh_resolution.set("mesh resolution", 5, 1, 20));
     local_mesh_parameters.add(local_mesh_scale.set("mesh scale local", 1700, -5000, 5000));
     local_mesh_parameters.add(fov.set("camera FOV", 60, 1, 180));
+    local_mesh_parameters.add(local_mesh.cv_near_threshold.set("cv near threshold", 0, 0, 255));
+    local_mesh_parameters.add(local_mesh.cv_far_threshold.set("cv far threshold", 255, 0, 255));
     
     remote_mesh_parameters.setName("remote mesh parameters");
     remote_mesh_parameters.add(remote_mesh_scale.set("mesh scale remote", 1700, 0, 5000));
@@ -144,10 +147,11 @@ void testApp::draw() {
 
             ofClear(0,0,0, 0);
             ofSetColor(colorCharacter_local, alpha_local);
-            camera.setGlobalPosition(0, 0, local_mesh_scale);
+            camera.setGlobalPosition(0, -500, local_mesh_scale);
             camera.setFov(fov);
             camera.begin();
             local_mesh.draw();
+            local_mesh.drawContour();
             camera.end();
     
             // set alpha back to 255 when drawing the beam
@@ -244,8 +248,12 @@ void testApp::draw() {
     spotCloud2.static_brightness = spotCloud1.static_brightness;
     spotCloud2.fadeTime = spotCloud1.fadeTime;
     
-    if(draw_gui)
+    if(draw_gui){
+        local_mesh.drawDebug();
         gui.draw();
+    }
+    
+
 }
 
 //--------------------------------------------------------------

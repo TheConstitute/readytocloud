@@ -17,6 +17,12 @@ meshMan::meshMan(){
     depth_threshold_max = 55;
     depth_threshold_min = 10;
     
+    mesh_mode = mesh_mode_lines;
+    
+    grayImage.allocate(kinect->width, kinect->height);
+	grayThreshNear.allocate(kinect->width, kinect->height);
+	grayThreshFar.allocate(kinect->width, kinect->height);
+    
 }
 
 void meshMan::update(){
@@ -45,7 +51,6 @@ void meshMan::setup(meshTransceiver* transceiver, ofxKinect* kinect){
 void meshMan::updateFromKinect(){
     kinect->update();
     
-    bool render_quads = true;
     
 
     // there is a new frame and we are connected
@@ -55,10 +60,10 @@ void meshMan::updateFromKinect(){
         mesh.clear();
 
 
-        if(!render_quads){
-            mesh.setMode(OF_PRIMITIVE_TRIANGLES);
-            for(int y = 0; y < h; y += mesh_resolution) {
-                for(int x = 0; x < w; x += mesh_resolution) {
+        if(mesh_mode == mesh_mode_triangles){
+            mesh.setMode(OF_PRIMITIVE_TRIANGLES); 
+            for(int y = 0; y < h - mesh_resolution; y += mesh_resolution) {
+                for(int x = 0; x < w - mesh_resolution; x += mesh_resolution) {
                     float distance = kinect->getDistanceAt(x, y);
                     if(distance > near_threshold && distance < far_threshold) {
                         ofVec3f current = kinect->getWorldCoordinateAt(x, y);
@@ -77,10 +82,10 @@ void meshMan::updateFromKinect(){
                 }
             }
         }
-        else {
+        else if (mesh_mode == mesh_mode_quads){
             mesh.setMode(OF_PRIMITIVE_QUADS);
-            for(int y = 0; y < h; y += mesh_resolution) {
-                for(int x = 0; x < w; x += mesh_resolution) {
+            for(int y = 0; y < h - mesh_resolution; y += mesh_resolution) {
+                for(int x = 0; x < w - mesh_resolution; x += mesh_resolution) {
                     float distance = kinect->getDistanceAt(x, y);
                     if(distance > near_threshold && distance < far_threshold) {
                         ofVec3f current = kinect->getWorldCoordinateAt(x, y);
@@ -98,12 +103,35 @@ void meshMan::updateFromKinect(){
                 }
             }
         }
+        else if (mesh_mode == mesh_mode_lines){
+            mesh.setMode(OF_PRIMITIVE_LINES);
+            
+            // make the horizontal lines
+            for(int y = 0; y < h - mesh_resolution; y+= mesh_resolution) {
+                for(int x = 0; x < w; x++) {
+                    ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+                    
+                    if(current.z > near_threshold && current.z < far_threshold){
+                        ofVec3f right = kinect->getWorldCoordinateAt(x + 1, y);
+                        if(abs(current.z - right.z) < depth_threshold_max) {
+                            mesh.addVertex(current);
+                            mesh.addVertex(right);
+                        }
+                    }
+                }
+            }
+        }
         
         transceiver->send(&mesh);
         
+        
+        
+        
+        
+        
         // TODO: reactivate this autocenter stuff
         //    /* get the center of the pointcloud */
-        //    if(local_autocenter){
+        //    if(autocenter){
         //        ofVec3f sumOfAllPoints(0,0,0);
         //        vector<ofVec3f> vertices = allUserPoints.getVertices();
         //        for(int i = 0; i < vertices.size(); i++){
@@ -130,6 +158,47 @@ void meshMan::updateFromKinect(){
         //            mesh_remote_center = sumOfAllPoints / vertices.size();
         //    }
     }
+}
+
+void meshMan::drawContour(){
+    // get the contour
+    grayImage.setFromPixels(kinect->getDepthPixels(), kinect->width, kinect->height);
+    
+    grayThreshNear = grayImage;
+    grayThreshFar = grayImage;
+    grayThreshNear.threshold(cv_near_threshold, true);
+    grayThreshFar.threshold(cv_far_threshold);
+    
+    cvAnd(grayThreshNear.getCvImage(), grayThreshFar.getCvImage(), grayImage.getCvImage(), NULL);
+    
+    int numContours = contourFinder.findContours(grayImage, 10, (kinect->width*kinect->height)/2, 20, true);
+    
+    // translate the contour into a 3d polyline
+    for(int i=0; i < numContours; i++){
+        ofMesh lines;
+        lines.setMode(OF_PRIMITIVE_LINES);
+        
+        // add vertices from the current blob into one polyline
+        
+        for(int point = 0; point < contourFinder.blobs[i].pts.size()-1; point++){
+            lines.addVertex(kinect->getWorldCoordinateAt(contourFinder.blobs[i].pts[point].x, contourFinder.blobs[i].pts[point].y));
+            lines.addVertex(kinect->getWorldCoordinateAt(contourFinder.blobs[i].pts[point+1].x, contourFinder.blobs[i].pts[point+1].y));
+        }
+
+        // TODO: clean this up
+        ofPushMatrix();
+        ofScale(1, -1, -1);
+        ofTranslate(-center.x, -center.y, -center.z);   // apply centering
+        lines.drawWireframe();                          // draw the contour
+        ofPopMatrix();
+    }
+}
+
+void meshMan::drawDebug(){
+    grayImage.draw(0, 0, 320, 240);
+    grayThreshFar.draw(330, 0, 320, 240);
+    grayThreshNear.draw(0, 250, 320, 240);
+    contourFinder.draw(330, 250, 320, 240);
 }
 
 void meshMan::updateFromNetwork(){

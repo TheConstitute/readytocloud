@@ -13,6 +13,7 @@
 #include "ofxKinect.h"
 #include "ofxNetwork.h"
 #include "ofxKinect.h"
+#include "ofxOpenCv.h"
 #include "meshTransceiver.h"
 
 class meshMan {
@@ -24,11 +25,15 @@ public:
     void update();
     
     void draw();
+    void drawContour();
+    void drawDebug();
     
     ofParameter<float> near_threshold, far_threshold;
     ofParameter<float> depth_threshold_max;
     ofParameter<float> depth_threshold_min;
     ofParameter<int> mesh_resolution;
+    
+    ofParameter<int> cv_near_threshold, cv_far_threshold;
     
     bool isConnected(){return connected;}
     
@@ -44,12 +49,19 @@ private:
     bool connected;
     
     enum modes{ mode_kinect, mode_network} mode;
+    enum mesh_modes {mesh_mode_triangles, mesh_mode_quads, mesh_mode_lines, mesh_mode_points, mesh_mode_cross_lines} mesh_mode;
 
     void updateFromKinect();
     void updateFromNetwork();
     
     void addMeshVertex(float x, float y, float z);
     void refreshRemoteMesh();
+    
+    //opencv stuff
+    ofxCvGrayscaleImage grayImage; // grayscale depth image
+    ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
+    ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
+    ofxCvContourFinder contourFinder;
 
 };
 
