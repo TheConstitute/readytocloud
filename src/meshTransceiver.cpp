@@ -17,6 +17,7 @@ meshTransceiver::meshTransceiver(void)
     calcCoordTransform();
     
     last_connection_check = -1000.0; // make sure that the connection is checked on startup
+    
 }
 
 void meshTransceiver::setup(int local_server_port, string server_ip, int remote_server_port){
@@ -62,11 +63,13 @@ bool meshTransceiver::send(ofMesh *mesh)
         send_succeeded = send_succeeded && tcp_client.sendRawBytes((const char*)buffer.data(), countBytes);
         
         if(send_succeeded){
-            ofLog() << "successfully sent " << countBytes << " bytes";
+            num_bytes_sent = countBytes;
             return true;
         }
-        else if (!tcp_client.isConnected())
+        else if (!tcp_client.isConnected()){
+            num_bytes_sent = -1;
             connected = false;
+        }
     }
     else{
         connectToRemoteHost();
@@ -134,6 +137,7 @@ bool meshTransceiver::receive(ofMesh *mesh)
         }
         else{
             ofLog() << "meshTransceiver: " << countBytes << " exceeds limit of 100.000 bytes for receiving";
+            num_bytes_received = -1;
             return false;
         }
         
@@ -145,12 +149,13 @@ bool meshTransceiver::receive(ofMesh *mesh)
             {
                 if (ret == SOCKET_TIMEOUT) ofLog() << "meshTransceiver: Socket timeout while receiving mesh";
                 else ofLog() << "meshTransceiver: Socket error while receiving mesh";
+                num_bytes_received = -1;
                 return false;
             }
             else i += ret;
         } while (i < countBytes);
         
-        ofLog() << "received " << countBytes << " bytes";
+        num_bytes_received = countBytes;
         
         decode(countBytes);
 
@@ -329,3 +334,5 @@ int meshTransceiver::decVector(ofVec3f &vec)
     vec.z = (((float)comp) / coord_scale.z) - coord_offset.z;
 }
 
+int meshTransceiver::getNumBytesReceived(){ return num_bytes_received; }
+int meshTransceiver::getNumBytesSent() { return num_bytes_sent; }

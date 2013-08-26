@@ -26,6 +26,9 @@ public:
     bool send(ofMesh *mesh);
     bool receive(ofMesh *mesh);
     
+    int getNumBytesReceived();
+    int getNumBytesSent();
+    
 private:
     
     void connectToRemoteHost();
@@ -86,6 +89,9 @@ private:
     int buffer_index;
     
     vector<unsigned char> buffer;
+    
+    int num_bytes_sent, num_bytes_received;
+    
 };
 
 #endif
