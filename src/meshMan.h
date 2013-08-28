@@ -45,7 +45,7 @@ public:
 private:
     ofMesh mesh, temp_mesh;
     ofColor color;
-    ofVec3f center;
+    ofVec3f offset;
     
     meshTransceiver* transceiver;
     ofxKinect* kinect;

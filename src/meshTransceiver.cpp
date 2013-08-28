@@ -72,6 +72,7 @@ bool meshTransceiver::send(ofMesh *mesh)
         }
     }
     else{
+        // reestablish the connection
         connectToRemoteHost();
     }
     
@@ -196,7 +197,8 @@ void meshTransceiver::calcCoordTransform()
     coord_scale.y = ((float)(1 << 15)) / 2000.0f;     // range +/- 2m
     coord_scale.z = ((float)(1 << 15)) / 3000.0f;     // range +/- 3m
     
-    coord_offset.z = -3000.0f;     // kinect returns only positive z values but we want zero-centered values
+    coord_offset.z = 0;// -3000.0f;     // kinect returns only positive z values but we want zero-centered values
+    // I'm doing this centering directly when I get the values from the kinect
 }
 
 

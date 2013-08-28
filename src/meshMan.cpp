@@ -17,6 +17,8 @@ meshMan::meshMan(){
     far_threshold = 2000;
     depth_threshold_max = 55;
     
+    offset = ofVec3f(0, 0, -3000); // we assume that people are standing 3m in front of the kinect
+    
     draw_contour = false;
     
     mesh_mode = mesh_mode_lines;
@@ -74,9 +76,10 @@ void meshMan::updateFromKinect(){
     //                    ofVec3f below = ofVec3f(x, y + mesh_resolution, kinect->getDistanceAt(x, y + mesh_resolution));
 
                         if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max){
-                            mesh.addVertex(current);
-                            mesh.addVertex(right);
-                            mesh.addVertex(below); 
+                            // apply the offset and add to the mesh
+                            mesh.addVertex(current + offset);
+                            mesh.addVertex(right + offset);
+                            mesh.addVertex(below + offset);
                         }
                     }
                 }
@@ -94,10 +97,11 @@ void meshMan::updateFromKinect(){
                         ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
                         
                         if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
-                            mesh.addVertex(current);
-                            mesh.addVertex(right);
-                            mesh.addVertex(rightbelow);
-                            mesh.addVertex(below);
+                            // apply the offset and add to the mesh
+                            mesh.addVertex(current + offset);
+                            mesh.addVertex(right + offset);
+                            mesh.addVertex(rightbelow + offset);
+                            mesh.addVertex(below + offset);
                         }
                     }
                 }
@@ -114,8 +118,9 @@ void meshMan::updateFromKinect(){
                     if(current.z > near_threshold && current.z < far_threshold){
                         ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
                         if(abs(current.z - right.z) < depth_threshold_max) {
-                            mesh.addVertex(current);
-                            mesh.addVertex(right);
+                            // apply the offset and add to the mesh
+                            mesh.addVertex(current + offset);
+                            mesh.addVertex(right + offset);
                         }
                     }
                 }
