@@ -84,7 +84,12 @@ class testApp : public ofBaseApp{
     ofParameterGroup remote_mesh_parameters;
     ofParameter<float> remote_mesh_scale;
     
-    ofParameter<bool> mirror_scene;
+    ofParameter<bool> mirror_scene; // TODO: implent mirroring
+    
+    ofParameter<float> x_correction_local = 0;
+    ofParameter<float> x_correction_remote = 0;
+    ofParameter<float> y_correction_local = 0;
+    ofParameter<float> y_correction_remote = 0;
     
     
     /* LIGHT PARAMETERS */
@@ -110,10 +115,7 @@ class testApp : public ofBaseApp{
     bool local_autocenter = true;
     bool remote_autocenter = false;
 
-    float xCorrection_local = 0;
-    float xCorrection_remote = 0;
-    float yCorrection_local = 0;
-    float yCorrection_remote = 0;
+
     
     ofVec3f mesh_local_center;
     ofVec3f mesh_remote_center;
@@ -141,7 +143,7 @@ class testApp : public ofBaseApp{
     float fadeStartTime_local = 0;
     float fadeStartTime_remote = 0;
     
-    bool showDebug = false;
+    bool draw_debug = false;
     
     meshMan local_mesh;
     meshMan remote_mesh;
@@ -150,4 +152,6 @@ class testApp : public ofBaseApp{
     
     // TEST
     ofParameter<float> fov;
+    ofParameter<float> camera_offset_y;
+    ofParameter<float> line_width;
 };

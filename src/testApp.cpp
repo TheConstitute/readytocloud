@@ -5,7 +5,6 @@ void testApp::setup() {
 //	ofSetLogLevel(OF_LOG_VERBOSE);
     
     ofSetFrameRate(25);
-    ofLogLevel(OF_LOG_WARNING);
 	
     /* KINECT SETUP */
 	kinect.setRegistration(true);   // enable depth->video image calibration
@@ -39,9 +38,17 @@ void testApp::setup() {
     local_mesh_parameters.add(fov.set("camera FOV", 60, 1, 180));
     local_mesh_parameters.add(local_mesh.cv_near_threshold.set("cv near threshold", 0, 0, 255));
     local_mesh_parameters.add(local_mesh.cv_far_threshold.set("cv far threshold", 255, 0, 255));
-    
+    local_mesh_parameters.add(local_mesh.draw_contour.set("draw contour", false));
+    local_mesh_parameters.add(local_mesh.mesh_mode.set("mesh mode", 2, 0, 2));
+    local_mesh_parameters.add(camera_offset_y.set("camer offset y", -500, -1000, 1000));
+    local_mesh_parameters.add(x_correction_local.set("x correction local", 0, -1000, 1000));
+    local_mesh_parameters.add(y_correction_local.set("y correction local", 0, -1000, 1000));
+    local_mesh_parameters.add(line_width.set("line width", 1, 1, 10));
+
     remote_mesh_parameters.setName("remote mesh parameters");
     remote_mesh_parameters.add(remote_mesh_scale.set("mesh scale remote", 1700, 0, 5000));
+    remote_mesh_parameters.add(x_correction_remote.set("x correction remote", 0, -1000, 1000));
+    remote_mesh_parameters.add(y_correction_remote.set("y correction remote", 0, -1000, 1000));
 
     network_parameters.setName("network parameters");
     network_parameters.add(local_port.set("local port", 7000));
@@ -50,7 +57,7 @@ void testApp::setup() {
     
     osc_parameters.setName("osc parameters");
     osc_parameters.add(osc_port_send.set("osc port send", 7001));
-    osc_parameters.add(osc_port_receive.set("osc port send", 7002));
+    osc_parameters.add(osc_port_receive.set("osc port receive", 7002));
     osc_parameters.add(osc_ipad_ip.set("osc ipad ip", "192.168.0.101"));
     
     dmx_parameters.setName("dmx parameters");
@@ -142,18 +149,18 @@ void testApp::update() {
 void testApp::draw() {
     ofPushMatrix();
     ofBackground(0, 0, 0); // paint the background black
-	
+	ofSetLineWidth(line_width);
     fboLocal.begin();
         ofPushStyle();
 
             ofClear(0,0,0, 0);
             ofSetColor(colorCharacter_local, alpha_local);
-            camera.setGlobalPosition(0, -500, local_mesh_scale);
+            camera.setGlobalPosition(0, camera_offset_y, local_mesh_scale);
             camera.setFov(fov);
             camera.begin();
             local_mesh.draw();
-            local_mesh.drawContour();
-            remote_mesh.draw();
+            ofSetColor(255, 0, 0);
+            if(mesh_transceiver.isConnected()) remote_mesh.draw();
             camera.end();
     
             // set alpha back to 255 when drawing the beam
@@ -201,8 +208,8 @@ void testApp::draw() {
     
     
     ofEnableAlphaBlending();
-        fboLocal.draw(xCorrection_local, -yCorrection_local);
-        if(remote_mesh.isConnected()) fboRemote.draw(xCorrection_remote, -yCorrection_remote);
+        fboLocal.draw(x_correction_local, -y_correction_local);
+        if(remote_mesh.isConnected()) fboRemote.draw(x_correction_remote, -y_correction_remote);
     ofDisableAlphaBlending();
 
     ofPopMatrix();
@@ -218,12 +225,13 @@ void testApp::draw() {
     spotCloud2.fadeTime = spotCloud1.fadeTime;
     
     if(draw_gui){
-        local_mesh.drawDebug();
         gui.draw();
         ofDrawBitmapString("r: \t" + ofToString(mesh_transceiver.getNumBytesReceived()), 10, ofGetHeight() - 45);
         ofDrawBitmapString("s: \t" + ofToString(mesh_transceiver.getNumBytesSent()), 10, ofGetHeight() - 30);
         ofDrawBitmapString("is connected: \t" + ofToString(mesh_transceiver.isConnected()), 10, ofGetHeight() - 15);
     }
+    if(draw_debug)
+        local_mesh.drawDebug();
 }
 
 //--------------------------------------------------------------
@@ -394,11 +402,11 @@ void testApp::keyPressed (int key) {
             break;
                         
         case 'x':
-            xCorrection_local++;
+            x_correction_local++;
             break;
                         
         case 'd':
-            showDebug = !showDebug;
+            draw_debug = !draw_debug;
             break;
         case 'h':
             draw_gui = !draw_gui;
@@ -429,8 +437,8 @@ void testApp::oscUpdate()
 
         
         // centering
-        else if (m.getAddress() == "/centering/local/correction") { yCorrection_local = m.getArgAsFloat(0); xCorrection_local = m.getArgAsFloat(1); }
-        else if (m.getAddress() == "/centering/remote/correction") { yCorrection_remote = m.getArgAsFloat(0); xCorrection_remote = m.getArgAsFloat(1); }
+        else if (m.getAddress() == "/centering/local/correction") { y_correction_local = m.getArgAsFloat(0); x_correction_local = m.getArgAsFloat(1); }
+        else if (m.getAddress() == "/centering/remote/correction") { y_correction_remote = m.getArgAsFloat(0); x_correction_remote = m.getArgAsFloat(1); }
         else if (m.getAddress() == "/centering/autolocal") { local_autocenter =  bool(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/centering/autoremote") { remote_autocenter = bool(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/mirror") { mirror = bool(m.getArgAsFloat(0)); }
@@ -656,11 +664,11 @@ void testApp::oscUpdateAll(){
         
     // centering
     updater.clear();
-    updater.setAddress("/centering/local/correction"); updater.addFloatArg(yCorrection_local); updater.addFloatArg(xCorrection_local);
+    updater.setAddress("/centering/local/correction"); updater.addFloatArg(y_correction_local); updater.addFloatArg(x_correction_local);
     oscSender.sendMessage(updater);
 
     updater.clear();
-    updater.setAddress("/centering/remote/correction"); updater.addFloatArg(yCorrection_remote); updater.addFloatArg(xCorrection_remote);
+    updater.setAddress("/centering/remote/correction"); updater.addFloatArg(y_correction_remote); updater.addFloatArg(x_correction_remote);
     oscSender.sendMessage(updater);
     
     updater.clear();
