@@ -122,6 +122,9 @@ void testApp::setup() {
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
     fboRemote.allocate(ofGetWidth(), ofGetHeight());
     
+    mesh_interactor.setup(&local_mesh, &remote_mesh);
+    
+    
 }
 
 
@@ -131,6 +134,7 @@ void testApp::update() {
     // update the mesh data
     local_mesh.update();
     remote_mesh.update();
+    mesh_interactor.update();
     
     oscUpdate();
     
@@ -158,9 +162,11 @@ void testApp::draw() {
             camera.setGlobalPosition(0, camera_offset_y, local_mesh_scale);
             camera.setFov(fov);
             camera.begin();
+            ofScale(1, -1, -1);
             local_mesh.draw();
             ofSetColor(255, 0, 0);
             if(mesh_transceiver.isConnected()) remote_mesh.draw();
+    mesh_interactor.draw();
             camera.end();
     
             // set alpha back to 255 when drawing the beam

@@ -101,10 +101,20 @@ bool meshTransceiver::receive(ofMesh *mesh)
     
     int ret;
     
+    // go through all the clients
     for(int client = 0; client < tcp_server.getLastID(); client++) {
+        // if the client is not connected, skip it
 		if( !tcp_server.isClientConnected(client) ) continue;
         
         unsigned int countBytes;
+        
+// TEST to get rid of the delay caused by data hanging around in the buffer
+//        ofLog() << "bytes from client:" << tcp_server.getNumReceivedBytes(client);
+//        if(tcp_server.getNumReceivedBytes(client) > 100000){
+//            char buffer[100000];
+//            tcp_server.receiveRawBytes(client, buffer, 100000);
+//            ofLog() << "clearing buffer because I already have more than 100.000 bytes in there";
+//        }
         
         // search for start-id of data
         char strbuf[256];

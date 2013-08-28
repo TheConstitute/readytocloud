@@ -77,7 +77,7 @@ void meshMan::updateFromKinect(){
                         if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max){
                             mesh.addVertex(current);
                             mesh.addVertex(right);
-                            mesh.addVertex(below);
+                            mesh.addVertex(below); 
                         }
                     }
                 }
@@ -225,8 +225,6 @@ void meshMan::updateFromNetwork(){
 //--------------------------------------------------------------
 void meshMan::draw(){
     ofPushMatrix();
-    
-    ofScale(1, -1, -1);
     
     // apply centering
     ofTranslate(-center.x, -center.y, -center.z);

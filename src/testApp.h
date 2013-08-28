@@ -9,6 +9,7 @@
 #include "FogMachine.h"
 #include "ofxGui.h"
 #include "meshMan.h"
+#include "meshInteractor.h";
 
 class testApp : public ofBaseApp{
 
@@ -149,9 +150,12 @@ class testApp : public ofBaseApp{
     meshMan remote_mesh;
     
     meshTransceiver mesh_transceiver;
+    meshInteractor mesh_interactor;
     
     // TEST
     ofParameter<float> fov;
     ofParameter<float> camera_offset_y;
     ofParameter<float> line_width;
+    
+    
 };

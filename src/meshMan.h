@@ -40,6 +40,8 @@ public:
     
     bool isConnected(){return connected;}
     
+    ofMesh* getMesh(){return &mesh;}
+    
     
 private:
     ofMesh mesh, temp_mesh;
