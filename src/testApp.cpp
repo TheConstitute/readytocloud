@@ -84,8 +84,12 @@ void testApp::setup() {
     gui.add(light_parameters);
     
     gui.loadFromFile("settings.xml");
+    
+    // gui3d
+    gui3d.setup("3d positioning");
+    gui3d.add(local_mesh.offset.set("local mesh offset", ofVec3f(0, 0, -3000), ofVec3f(-5000,-5000,-5000), ofVec3f(5000,5000,5000)));
+    
 
-     
     mesh_transceiver.setup(local_port, server_ip, remote_port);
     
     local_mesh.setup(&mesh_transceiver, &kinect);
@@ -249,6 +253,8 @@ void testApp::draw() {
         ofDrawBitmapString("s: \t" + ofToString(mesh_transceiver.getNumBytesSent()), 10, ofGetHeight() - 30);
         ofDrawBitmapString("is connected: \t" + ofToString(mesh_transceiver.isConnected()), 10, ofGetHeight() - 15);
     }
+    if(draw_gui3d)
+        gui3d.draw();
     
 }
 
@@ -434,6 +440,9 @@ void testApp::keyPressed (int key) {
             break;
         case 'g':
             draw_grid = !draw_grid;
+            break;
+        case 'p':
+            draw_gui3d = !draw_gui3d;
             break;
         case OF_KEY_UP:
 			kinect_angle++;

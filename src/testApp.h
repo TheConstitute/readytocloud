@@ -38,8 +38,9 @@ class testApp : public ofBaseApp{
         ofxKinect kinect;
     
         // GUI 
-    	ofxPanel gui;
-        bool draw_gui;
+        ofxPanel gui;
+        ofxPanel gui3d;
+        bool draw_gui, draw_gui3d;
 
     
         // VIDEO OVERLAYS
