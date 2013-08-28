@@ -18,6 +18,8 @@ meshMan::meshMan(){
     depth_threshold_max = 55;
     depth_threshold_min = 10;
     
+    draw_contour = false;
+    
     mesh_mode = mesh_mode_lines;
     
     grayImage.allocate(kinect->width, kinect->height);
@@ -184,12 +186,7 @@ void meshMan::drawContour(){
             lines.addVertex(kinect->getWorldCoordinateAt(contourFinder.blobs[i].pts[point+1].x, contourFinder.blobs[i].pts[point+1].y));
         }
 
-        // TODO: clean this up
-        ofPushMatrix();
-        ofScale(1, -1, -1);
-        ofTranslate(-center.x, -center.y, -center.z);   // apply centering
         lines.drawWireframe();                          // draw the contour
-        ofPopMatrix();
     }
 }
 
@@ -201,7 +198,8 @@ void meshMan::drawDebug(){
 }
 
 void meshMan::updateFromNetwork(){
-    transceiver->receive(&mesh);
+    if(transceiver->receive(&temp_mesh))
+        mesh = temp_mesh;
 
     // TODO: redo this
 //    // get the data from the clients
@@ -235,6 +233,8 @@ void meshMan::draw(){
     
     // draw the local mesh
     mesh.drawWireframe();
+    
+    if(draw_contour) drawContour();
     
     ofPopMatrix();
 }

@@ -25,7 +25,6 @@ public:
     void update();
     
     void draw();
-    void drawContour();
     void drawDebug();
     
     ofParameter<float> near_threshold, far_threshold;
@@ -34,23 +33,28 @@ public:
     ofParameter<int> mesh_resolution_x;
     ofParameter<int> mesh_resolution_y;
     
+    ofParameter<bool> draw_contour;
+    ofParameter<int> mesh_mode;
+    
     ofParameter<int> cv_near_threshold, cv_far_threshold;
     
     bool isConnected(){return connected;}
     
     
 private:
-    ofMesh mesh;
+    ofMesh mesh, temp_mesh;
     ofColor color;
     ofVec3f center;
     
     meshTransceiver* transceiver;
     ofxKinect* kinect;
     
+    void drawContour();
+    
     bool connected;
     
     enum modes{ mode_kinect, mode_network} mode;
-    enum mesh_modes {mesh_mode_triangles, mesh_mode_quads, mesh_mode_lines, mesh_mode_points, mesh_mode_cross_lines} mesh_mode;
+    enum mesh_modes {mesh_mode_triangles, mesh_mode_quads, mesh_mode_lines, mesh_mode_points, mesh_mode_cross_lines};
 
     void updateFromKinect();
     void updateFromNetwork();
