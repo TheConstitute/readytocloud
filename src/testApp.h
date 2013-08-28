@@ -60,6 +60,7 @@ class testApp : public ofBaseApp{
         bool b_clouds = false;
 
         ofCamera camera;
+    ofEasyCam easyCam;
     
         ofxOscReceiver oscReceiver;
         ofxOscSender oscSender;
@@ -92,6 +93,11 @@ class testApp : public ofBaseApp{
     ofParameter<float> y_correction_local = 0;
     ofParameter<float> y_correction_remote = 0;
     
+    ofParameter<float> kinect_angle;
+    
+    
+    bool use_easy_cam;
+    bool draw_grid;
     
     /* LIGHT PARAMETERS */
     ofParameterGroup light_parameters;

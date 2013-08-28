@@ -30,7 +30,6 @@ void testApp::setup() {
     local_mesh_parameters.setName("local mesh parameters");
     local_mesh_parameters.add(local_mesh.near_threshold.set("near threshold", 0, 0, 10000));
     local_mesh_parameters.add(local_mesh.far_threshold.set("far threshold", 2000, 0, 10000));
-    local_mesh_parameters.add(local_mesh.depth_threshold_min.set("depth threshold min", 10, 0, 500));
     local_mesh_parameters.add(local_mesh.depth_threshold_max.set("depth threshold max", 50, 0, 500));
     local_mesh_parameters.add(local_mesh.mesh_resolution_x.set("mesh resolution x", 5, 1, 20));
     local_mesh_parameters.add(local_mesh.mesh_resolution_y.set("mesh resolution y", 5, 1, 20));
@@ -44,6 +43,7 @@ void testApp::setup() {
     local_mesh_parameters.add(x_correction_local.set("x correction local", 0, -1000, 1000));
     local_mesh_parameters.add(y_correction_local.set("y correction local", 0, -1000, 1000));
     local_mesh_parameters.add(line_width.set("line width", 1, 1, 10));
+    local_mesh_parameters.add(kinect_angle.set("kinect angle", 0, -30, 30));
 
     remote_mesh_parameters.setName("remote mesh parameters");
     remote_mesh_parameters.add(remote_mesh_scale.set("mesh scale remote", 1700, 0, 5000));
@@ -90,6 +90,8 @@ void testApp::setup() {
     
     local_mesh.setup(&mesh_transceiver, &kinect);
     remote_mesh.setup(&mesh_transceiver);
+    
+    use_easy_cam = false;
     
     
     /* VIDEO LAYERS */
@@ -151,37 +153,44 @@ void testApp::update() {
 
 //--------------------------------------------------------------
 void testApp::draw() {
-    ofPushMatrix();
     ofBackground(0, 0, 0); // paint the background black
+    ofPushMatrix();
 	ofSetLineWidth(line_width);
     fboLocal.begin();
         ofPushStyle();
+        ofClear(0, 0, 0, 0);
+        ofSetColor(colorCharacter_local, alpha_local);
 
-            ofClear(0,0,0, 0);
-            ofSetColor(colorCharacter_local, alpha_local);
-            camera.setGlobalPosition(0, camera_offset_y, local_mesh_scale);
-            camera.setFov(fov);
-            camera.begin();
-            ofScale(1, -1, -1);
-            local_mesh.draw();
-            ofSetColor(255, 0, 0);
-            if(mesh_transceiver.isConnected()) remote_mesh.draw();
-    mesh_interactor.draw();
-            camera.end();
+        camera.setGlobalPosition(0, camera_offset_y, local_mesh_scale);
+        camera.setFov(fov);
+        if(use_easy_cam)easyCam.begin();
+        else camera.begin();
+
+        if(draw_grid) ofDrawGrid(1000);
+
+        ofScale(1, -1, -1);
     
-            // set alpha back to 255 when drawing the beam
-            ofSetColor(colorCharacter_local, 255);
-            if(b_overlay_in_local){
-                ofEnableAlphaBlending();
-                overlay_in_local.draw(0,0, ofGetWidth(), ofGetHeight());
-                ofDisableAlphaBlending();
-                firstFrame_local = false;
-            }
-            if(b_overlay_out_local){
-                ofEnableAlphaBlending();
-                overlay_out_local.draw(0,0, ofGetWidth(), ofGetHeight());
-                ofDisableAlphaBlending();
-            }
+        local_mesh.draw();
+        ofSetColor(255, 0, 0);
+        if(mesh_transceiver.isConnected()) remote_mesh.draw();
+        mesh_interactor.draw();
+
+        if(use_easy_cam)easyCam.end();
+        else camera.end();
+
+        // set alpha back to 255 when drawing the beam
+        ofSetColor(colorCharacter_local, 255);
+        if(b_overlay_in_local){
+            ofEnableAlphaBlending();
+            overlay_in_local.draw(0,0, ofGetWidth(), ofGetHeight());
+            ofDisableAlphaBlending();
+            firstFrame_local = false;
+        }
+        if(b_overlay_out_local){
+            ofEnableAlphaBlending();
+            overlay_out_local.draw(0,0, ofGetWidth(), ofGetHeight());
+            ofDisableAlphaBlending();
+        }
         ofPopStyle();
     fboLocal.end();
     
@@ -230,14 +239,17 @@ void testApp::draw() {
     spotCloud2.static_brightness = spotCloud1.static_brightness;
     spotCloud2.fadeTime = spotCloud1.fadeTime;
     
+    kinect.setCameraTiltAngle(kinect_angle);
+    
+    if(draw_debug)
+        local_mesh.drawDebug();
     if(draw_gui){
         gui.draw();
         ofDrawBitmapString("r: \t" + ofToString(mesh_transceiver.getNumBytesReceived()), 10, ofGetHeight() - 45);
         ofDrawBitmapString("s: \t" + ofToString(mesh_transceiver.getNumBytesSent()), 10, ofGetHeight() - 30);
         ofDrawBitmapString("is connected: \t" + ofToString(mesh_transceiver.isConnected()), 10, ofGetHeight() - 15);
     }
-    if(draw_debug)
-        local_mesh.drawDebug();
+    
 }
 
 //--------------------------------------------------------------
@@ -417,6 +429,22 @@ void testApp::keyPressed (int key) {
         case 'h':
             draw_gui = !draw_gui;
             break;
+        case 'c':
+            use_easy_cam = !use_easy_cam;
+            break;
+        case 'g':
+            draw_grid = !draw_grid;
+            break;
+        case OF_KEY_UP:
+			kinect_angle++;
+			if(kinect_angle>30) kinect_angle=30;
+			break;
+			
+		case OF_KEY_DOWN:
+			kinect_angle--;
+			if(kinect_angle<-30) kinect_angle=-30;
+			break;
+
     }
 }
 
