@@ -16,7 +16,6 @@ meshMan::meshMan(){
     near_threshold = 0;
     far_threshold = 2000;
     depth_threshold_max = 55;
-    depth_threshold_min = 10;
     
     draw_contour = false;
     
@@ -224,17 +223,8 @@ void meshMan::updateFromNetwork(){
 
 //--------------------------------------------------------------
 void meshMan::draw(){
-    ofPushMatrix();
-    
-    // apply centering
-    ofTranslate(-center.x, -center.y, -center.z);
-    
-    // draw the local mesh
     mesh.drawWireframe();
-    
     if(draw_contour) drawContour();
-    
-    ofPopMatrix();
 }
 
 //--------------------------------------------------------------

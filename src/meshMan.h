@@ -29,7 +29,6 @@ public:
     
     ofParameter<float> near_threshold, far_threshold;
     ofParameter<float> depth_threshold_max;
-    ofParameter<float> depth_threshold_min;
     ofParameter<int> mesh_resolution_x;
     ofParameter<int> mesh_resolution_y;
     
