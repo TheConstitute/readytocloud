@@ -9,7 +9,7 @@
 #include "FogMachine.h"
 #include "ofxGui.h"
 #include "meshMan.h"
-#include "meshInteractor.h";
+#include "meshInteractor.h"
 
 class testApp : public ofBaseApp{
 
@@ -68,9 +68,11 @@ class testApp : public ofBaseApp{
     
     /* NETWORK PARAMETERS */
     ofParameterGroup network_parameters;
+    ofParameter<bool> activate_network;
     ofParameter<string> server_ip;
     ofParameter<int> local_port, remote_port;
     ofParameter<string> remote_ip;
+    
     
     ofParameterGroup osc_parameters;
     ofParameter<int> osc_port_send, osc_port_receive;
@@ -135,7 +137,7 @@ class testApp : public ofBaseApp{
     bool draw_remote_mesh = true;
     
     bool mirror = true;
-    bool activate_network = false;
+
     
     ofFbo fboLocal;
     ofFbo fboRemote;

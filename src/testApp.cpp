@@ -4,7 +4,7 @@
 void testApp::setup() {
 //	ofSetLogLevel(OF_LOG_VERBOSE);
     
-    ofSetFrameRate(25);
+//    ofSetFrameRate(25);
 	
     /* KINECT SETUP */
 	kinect.setRegistration(true);   // enable depth->video image calibration
@@ -51,6 +51,7 @@ void testApp::setup() {
     remote_mesh_parameters.add(y_correction_remote.set("y correction remote", 0, -1000, 1000));
 
     network_parameters.setName("network parameters");
+    network_parameters.add(activate_network.set("activate network", true));
     network_parameters.add(local_port.set("local port", 7000));
     network_parameters.add(server_ip.set("server ip", "localhost"));
     network_parameters.add(remote_port.set("remote port", 8000));
@@ -82,20 +83,24 @@ void testApp::setup() {
     gui.add(osc_parameters);
     gui.add(dmx_parameters);
     gui.add(light_parameters);
-    
     gui.loadFromFile("settings.xml");
     
     // gui3d
-    gui3d.setup("3d positioning");
+    gui3d.setup("positioning", "positioning.xml", 800, 30);
     gui3d.add(local_mesh.offset.set("local mesh offset", ofVec3f(0, 0, -3000), ofVec3f(-5000,-5000,-5000), ofVec3f(5000,5000,5000)));
+    gui3d.loadFromFile("positioning.xml");
     
-
-    mesh_transceiver.setup(local_port, server_ip, remote_port);
+    if(activate_network){
+        mesh_transceiver.setup(local_port, server_ip, remote_port);
+        remote_mesh.setup(&mesh_transceiver);
+    }
     
     local_mesh.setup(&mesh_transceiver, &kinect);
-    remote_mesh.setup(&mesh_transceiver);
+    
+    if(activate_network) mesh_interactor.setup(&local_mesh, &remote_mesh);
     
     use_easy_cam = false;
+    draw_grid = false;
     
     
     /* VIDEO LAYERS */
@@ -128,9 +133,6 @@ void testApp::setup() {
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
     fboRemote.allocate(ofGetWidth(), ofGetHeight());
     
-    mesh_interactor.setup(&local_mesh, &remote_mesh);
-    
-    
 }
 
 
@@ -139,8 +141,11 @@ void testApp::update() {
 
     // update the mesh data
     local_mesh.update();
-    remote_mesh.update();
-    mesh_interactor.update();
+    if(activate_network) remote_mesh.update();
+    
+    // only update if one of the meshes has received new data
+    if(local_mesh.isFrameNew() || remote_mesh.isFrameNew())
+        mesh_interactor.update();
     
     oscUpdate();
     
@@ -243,15 +248,13 @@ void testApp::draw() {
     spotCloud2.static_brightness = spotCloud1.static_brightness;
     spotCloud2.fadeTime = spotCloud1.fadeTime;
     
-    kinect.setCameraTiltAngle(kinect_angle);
-    
     if(draw_debug)
         local_mesh.drawDebug();
     if(draw_gui){
         gui.draw();
-        ofDrawBitmapString("r: \t" + ofToString(mesh_transceiver.getNumBytesReceived()), 10, ofGetHeight() - 45);
-        ofDrawBitmapString("s: \t" + ofToString(mesh_transceiver.getNumBytesSent()), 10, ofGetHeight() - 30);
-        ofDrawBitmapString("is connected: \t" + ofToString(mesh_transceiver.isConnected()), 10, ofGetHeight() - 15);
+        ofDrawBitmapString("r: \t" + ofToString(mesh_transceiver.getNumBytesReceived()), ofGetWidth() - 200, ofGetHeight() - 45);
+        ofDrawBitmapString("s: \t" + ofToString(mesh_transceiver.getNumBytesSent()), ofGetWidth() - 200, ofGetHeight() - 30);
+        ofDrawBitmapString("is connected: \t" + ofToString(mesh_transceiver.isConnected()), ofGetWidth() - 200, ofGetHeight() - 15);
     }
     if(draw_gui3d)
         gui3d.draw();
@@ -449,11 +452,13 @@ void testApp::keyPressed (int key) {
         case OF_KEY_UP:
 			kinect_angle++;
 			if(kinect_angle>30) kinect_angle=30;
+            kinect.setCameraTiltAngle(kinect_angle);
 			break;
 			
 		case OF_KEY_DOWN:
 			kinect_angle--;
 			if(kinect_angle<-30) kinect_angle=-30;
+            kinect.setCameraTiltAngle(kinect_angle);
 			break;
 
     }
