@@ -37,6 +37,8 @@ public:
     
     ofParameter<int> cv_near_threshold, cv_far_threshold;
     
+    ofParameter<ofVec3f> offset;
+    
     bool isConnected(){return connected;}
     
     ofMesh* getMesh(){return &mesh;}
@@ -45,7 +47,6 @@ public:
 private:
     ofMesh mesh, temp_mesh;
     ofColor color;
-    ofVec3f offset;
     
     meshTransceiver* transceiver;
     ofxKinect* kinect;
