@@ -33,6 +33,7 @@ public:
     ofParameter<int> mesh_resolution_y;
     
     ofParameter<bool> draw_contour;
+    ofParameter<bool> mirror;
     ofParameter<int> mesh_mode;
     
     ofParameter<int> cv_near_threshold, cv_far_threshold;

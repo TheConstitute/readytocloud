@@ -44,6 +44,7 @@ void testApp::setup() {
     local_mesh_parameters.add(y_correction_local.set("y correction local", 0, -1000, 1000));
     local_mesh_parameters.add(line_width.set("line width", 1, 1, 10));
     local_mesh_parameters.add(kinect_angle.set("kinect angle", 0, -30, 30));
+    local_mesh_parameters.add(local_mesh.mirror.set("mirror", false));
 
     remote_mesh_parameters.setName("remote mesh parameters");
     remote_mesh_parameters.add(remote_mesh_scale.set("mesh scale remote", 1700, 0, 5000));
