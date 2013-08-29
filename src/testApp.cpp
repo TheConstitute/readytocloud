@@ -48,6 +48,7 @@ void testApp::setup() {
     local_mesh_parameters.add(local_mesh.mirror.set("mirror", false));
 
     network_parameters.setName("network parameters");
+    network_parameters.add(hide_remote.set("hide remote", false));
     network_parameters.add(activate_network.set("activate network", true));
     network_parameters.add(local_port.set("local port", 7000));
     network_parameters.add(server_ip.set("server ip", "localhost"));
@@ -72,7 +73,7 @@ void testApp::setup() {
     light_parameters.add(spotInteraction1.fadeTime.set("fade time", 2, 0, 10));
     light_parameters.add(spotCloud1.static_brightness.set("spot cloud brightness", 255, 0, 255));
     light_parameters.add(spotCloud1.fadeTime.set("cloud fade time", 3, 0, 10));
-        
+    
     gui.setup(); 
     gui.add(local_mesh_parameters);
     gui.add(network_parameters);
@@ -172,12 +173,11 @@ void testApp::draw() {
         else camera.begin();
 
         if(draw_grid) ofDrawGrid(1000);
-
         ofScale(1, -1, -1);
     
         local_mesh.draw();
         ofSetColor(255, 0, 0);
-        if(mesh_transceiver.isConnected()) remote_mesh.draw();
+        if(mesh_transceiver.isConnected() && !hide_remote) remote_mesh.draw();
         mesh_interactor.draw();
 
         if(use_easy_cam)easyCam.end();

@@ -90,6 +90,7 @@ class testApp : public ofBaseApp{
     ofParameter<float> camera_offset_y;
     ofParameter<float> camera_angle;
     ofParameter<float> line_width;
+    ofParameter<bool> hide_remote;
     
     bool use_easy_cam;
     bool draw_grid;
