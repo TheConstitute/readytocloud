@@ -326,7 +326,9 @@ void testApp::updateScene(){
                 spotCloud1.fadeOut();
                 spotCloud2.fadeOut();
                 break;
-            case 5: // beam out
+            case 5:
+                beamIn_remote();                
+            case 6: // beam out
                 beamOut_local();
                 spotInteraction1.fadeIn();
                 spotInteraction2.fadeIn();
