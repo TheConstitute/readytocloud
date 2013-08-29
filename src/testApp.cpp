@@ -34,22 +34,18 @@ void testApp::setup() {
     local_mesh_parameters.add(local_mesh.mesh_resolution_x.set("mesh resolution x", 5, 1, 20));
     local_mesh_parameters.add(local_mesh.mesh_resolution_y.set("mesh resolution y", 5, 1, 20));
     local_mesh_parameters.add(local_mesh_scale.set("mesh scale local", 1700, -5000, 5000));
-    local_mesh_parameters.add(fov.set("camera FOV", 60, 1, 180));
     local_mesh_parameters.add(local_mesh.cv_near_threshold.set("cv near threshold", 0, 0, 255));
     local_mesh_parameters.add(local_mesh.cv_far_threshold.set("cv far threshold", 255, 0, 255));
     local_mesh_parameters.add(local_mesh.draw_contour.set("draw contour", false));
+    local_mesh_parameters.add(line_width.set("line width", 1, 1, 10));
     local_mesh_parameters.add(local_mesh.mesh_mode.set("mesh mode", 2, 0, 2));
+    local_mesh_parameters.add(fov.set("camera FOV", 60, 1, 180));
     local_mesh_parameters.add(camera_offset_y.set("camer offset y", -500, -1000, 1000));
+    local_mesh_parameters.add(camera_angle.set("camera angle", 0, -90, 90));
+    local_mesh_parameters.add(kinect_angle.set("kinect angle", 0, -30, 30));
     local_mesh_parameters.add(x_correction_local.set("x correction local", 0, -1000, 1000));
     local_mesh_parameters.add(y_correction_local.set("y correction local", 0, -1000, 1000));
-    local_mesh_parameters.add(line_width.set("line width", 1, 1, 10));
-    local_mesh_parameters.add(kinect_angle.set("kinect angle", 0, -30, 30));
     local_mesh_parameters.add(local_mesh.mirror.set("mirror", false));
-
-    remote_mesh_parameters.setName("remote mesh parameters");
-    remote_mesh_parameters.add(remote_mesh_scale.set("mesh scale remote", 1700, 0, 5000));
-    remote_mesh_parameters.add(x_correction_remote.set("x correction remote", 0, -1000, 1000));
-    remote_mesh_parameters.add(y_correction_remote.set("y correction remote", 0, -1000, 1000));
 
     network_parameters.setName("network parameters");
     network_parameters.add(activate_network.set("activate network", true));
@@ -79,7 +75,6 @@ void testApp::setup() {
         
     gui.setup(); 
     gui.add(local_mesh_parameters);
-    gui.add(remote_mesh_parameters);
     gui.add(network_parameters);
     gui.add(osc_parameters);
     gui.add(dmx_parameters);
@@ -132,7 +127,6 @@ void testApp::setup() {
 //    ofHideCursor();
     
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
-    fboRemote.allocate(ofGetWidth(), ofGetHeight());
     
 }
 
@@ -173,6 +167,7 @@ void testApp::draw() {
 
         camera.setGlobalPosition(0, camera_offset_y, local_mesh_scale);
         camera.setFov(fov);
+        camera.setOrientation(ofVec3f(camera_angle, 0, 0));
         if(use_easy_cam)easyCam.begin();
         else camera.begin();
 
@@ -234,7 +229,6 @@ void testApp::draw() {
     
     ofEnableAlphaBlending();
         fboLocal.draw(x_correction_local, -y_correction_local);
-        if(remote_mesh.isConnected()) fboRemote.draw(x_correction_remote, -y_correction_remote);
     ofDisableAlphaBlending();
 
     ofPopMatrix();
@@ -484,12 +478,10 @@ void testApp::oscUpdate()
         
         // mesh settings
         else if (m.getAddress() == "/mesh/local/scale") { local_mesh_scale = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/mesh/remote/scale") { remote_mesh_scale = m.getArgAsFloat(0); }
 
         
         // centering
         else if (m.getAddress() == "/centering/local/correction") { y_correction_local = m.getArgAsFloat(0); x_correction_local = m.getArgAsFloat(1); }
-        else if (m.getAddress() == "/centering/remote/correction") { y_correction_remote = m.getArgAsFloat(0); x_correction_remote = m.getArgAsFloat(1); }
         else if (m.getAddress() == "/centering/autolocal") { local_autocenter =  bool(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/centering/autoremote") { remote_autocenter = bool(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/mirror") { mirror = bool(m.getArgAsFloat(0)); }
@@ -716,10 +708,6 @@ void testApp::oscUpdateAll(){
     // centering
     updater.clear();
     updater.setAddress("/centering/local/correction"); updater.addFloatArg(y_correction_local); updater.addFloatArg(x_correction_local);
-    oscSender.sendMessage(updater);
-
-    updater.clear();
-    updater.setAddress("/centering/remote/correction"); updater.addFloatArg(y_correction_remote); updater.addFloatArg(x_correction_remote);
     oscSender.sendMessage(updater);
     
     updater.clear();

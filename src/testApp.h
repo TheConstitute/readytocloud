@@ -41,7 +41,6 @@ class testApp : public ofBaseApp{
         ofxPanel gui;
         ofxPanel gui3d;
         bool draw_gui, draw_gui3d;
-
     
         // VIDEO OVERLAYS
         ofVideoPlayer overlay_in_local;
@@ -61,7 +60,7 @@ class testApp : public ofBaseApp{
         bool b_clouds = false;
 
         ofCamera camera;
-    ofEasyCam easyCam;
+        ofEasyCam easyCam;
     
         ofxOscReceiver oscReceiver;
         ofxOscSender oscSender;
@@ -72,7 +71,6 @@ class testApp : public ofBaseApp{
     ofParameter<string> server_ip;
     ofParameter<int> local_port, remote_port;
     ofParameter<string> remote_ip;
-    
     
     ofParameterGroup osc_parameters;
     ofParameter<int> osc_port_send, osc_port_receive;
@@ -85,19 +83,13 @@ class testApp : public ofBaseApp{
     /* RENDERING PARAMETERS */
     ofParameterGroup local_mesh_parameters;
     ofParameter<float> local_mesh_scale;
-    
-    ofParameterGroup remote_mesh_parameters;
-    ofParameter<float> remote_mesh_scale;
-    
-    ofParameter<bool> mirror_scene; // TODO: implent mirroring
-    
     ofParameter<float> x_correction_local = 0;
-    ofParameter<float> x_correction_remote = 0;
     ofParameter<float> y_correction_local = 0;
-    ofParameter<float> y_correction_remote = 0;
-    
     ofParameter<float> kinect_angle;
-    
+    ofParameter<float> fov;
+    ofParameter<float> camera_offset_y;
+    ofParameter<float> camera_angle;
+    ofParameter<float> line_width;
     
     bool use_easy_cam;
     bool draw_grid;
@@ -140,7 +132,6 @@ class testApp : public ofBaseApp{
 
     
     ofFbo fboLocal;
-    ofFbo fboRemote;
     
     int alpha_local = 255;
     int alpha_remote = 255;
@@ -160,11 +151,7 @@ class testApp : public ofBaseApp{
     
     meshTransceiver mesh_transceiver;
     meshInteractor mesh_interactor;
-    
-    // TEST
-    ofParameter<float> fov;
-    ofParameter<float> camera_offset_y;
-    ofParameter<float> line_width;
+
     
     
 };
