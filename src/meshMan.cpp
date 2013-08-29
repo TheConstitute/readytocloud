@@ -30,6 +30,8 @@ meshMan::meshMan(){
 }
 
 void meshMan::update(){
+    frame_new = false;
+    
     switch(mode){
         case mode_kinect:
             updateFromKinect();
@@ -54,13 +56,14 @@ void meshMan::setup(meshTransceiver* transceiver, ofxKinect* kinect){
 //--------------------------------------------------------------
 void meshMan::updateFromKinect(){
     kinect->update();
-
+    
     // there is a new frame and we are connected
 	if(kinect->isFrameNew()) {
         int w = 640;
         int h = 480;
         mesh.clear();
 
+        frame_new = true;
 
         if(mesh_mode == mesh_mode_triangles){
             mesh.setMode(OF_PRIMITIVE_TRIANGLES); 
@@ -127,7 +130,8 @@ void meshMan::updateFromKinect(){
             }
         }
         
-        transceiver->send(&mesh);
+        if(transceiver->isConnected())
+            transceiver->send(&mesh);
         
         
         
@@ -186,8 +190,8 @@ void meshMan::drawContour(){
         // add vertices from the current blob into one polyline
         
         for(int point = 0; point < contourFinder.blobs[i].pts.size()-1; point++){
-            lines.addVertex(kinect->getWorldCoordinateAt(contourFinder.blobs[i].pts[point].x, contourFinder.blobs[i].pts[point].y));
-            lines.addVertex(kinect->getWorldCoordinateAt(contourFinder.blobs[i].pts[point+1].x, contourFinder.blobs[i].pts[point+1].y));
+            lines.addVertex(kinect->getWorldCoordinateAt(contourFinder.blobs[i].pts[point].x, contourFinder.blobs[i].pts[point].y) + offset);
+            lines.addVertex(kinect->getWorldCoordinateAt(contourFinder.blobs[i].pts[point+1].x, contourFinder.blobs[i].pts[point+1].y) + offset);
         }
 
         lines.drawWireframe();                          // draw the contour
@@ -201,9 +205,12 @@ void meshMan::drawDebug(){
     contourFinder.draw(330, 250, 320, 240);
 }
 
-void meshMan::updateFromNetwork(){
-    if(transceiver->receive(&temp_mesh))
-        mesh = temp_mesh;
+void meshMan::updateFromNetwork(){    
+    if(transceiver->receive(&temp_mesh)){
+        mesh = ofMesh(temp_mesh);
+        frame_new = true;
+    }
+
 
     // TODO: redo this
 //    // get the data from the clients

@@ -43,6 +43,7 @@ public:
     
     ofMesh* getMesh(){return &mesh;}
     
+    bool isFrameNew(){return frame_new;}
     
 private:
     ofMesh mesh, temp_mesh;
@@ -54,6 +55,7 @@ private:
     void drawContour();
     
     bool connected;
+    bool frame_new;
     
     enum modes{ mode_kinect, mode_network} mode;
     enum mesh_modes {mesh_mode_triangles, mesh_mode_quads, mesh_mode_lines, mesh_mode_points, mesh_mode_cross_lines};
