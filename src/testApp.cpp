@@ -87,6 +87,9 @@ void testApp::setup() {
     gui3d.add(local_mesh.offset.set("local mesh offset", ofVec3f(0, 0, -3000), ofVec3f(-5000,-5000,-5000), ofVec3f(5000,5000,5000)));
     gui3d.loadFromFile("positioning.xml");
     
+    draw_gui3d = false;
+    draw_gui = false;
+    
     if(activate_network){
         mesh_transceiver.setup(local_port, server_ip, remote_port);
         remote_mesh.setup(&mesh_transceiver);
@@ -128,6 +131,8 @@ void testApp::setup() {
 //    ofHideCursor();
     
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
+
+    kinect.setCameraTiltAngle(kinect_angle);
     
 }
 
@@ -174,28 +179,27 @@ void testApp::draw() {
 
         if(draw_grid) ofDrawGrid(1000);
         ofScale(1, -1, -1);
-    
+
         local_mesh.draw();
-        ofSetColor(255, 0, 0);
         if(mesh_transceiver.isConnected() && !hide_remote) remote_mesh.draw();
         mesh_interactor.draw();
 
         if(use_easy_cam)easyCam.end();
         else camera.end();
 
-        // set alpha back to 255 when drawing the beam
-        ofSetColor(colorCharacter_local, 255);
-        if(b_overlay_in_local){
-            ofEnableAlphaBlending();
-            overlay_in_local.draw(0,0, ofGetWidth(), ofGetHeight());
-            ofDisableAlphaBlending();
-            firstFrame_local = false;
-        }
-        if(b_overlay_out_local){
-            ofEnableAlphaBlending();
-            overlay_out_local.draw(0,0, ofGetWidth(), ofGetHeight());
-            ofDisableAlphaBlending();
-        }
+//        // set alpha back to 255 when drawing the beam
+//        ofSetColor(colorCharacter_local, 255);
+//        if(b_overlay_in_local){
+//            ofEnableAlphaBlending();
+//            overlay_in_local.draw(0,0, ofGetWidth(), ofGetHeight());
+//            ofDisableAlphaBlending();
+//            firstFrame_local = false;
+//        }
+//        if(b_overlay_out_local){
+//            ofEnableAlphaBlending();
+//            overlay_out_local.draw(0,0, ofGetWidth(), ofGetHeight());
+//            ofDisableAlphaBlending();
+//        }
         ofPopStyle();
     fboLocal.end();
     
