@@ -15,6 +15,7 @@
 #include "ofxKinect.h"
 #include "ofxOpenCv.h"
 #include "meshTransceiver.h"
+#include "meshFlash.h"
 
 class meshMan {
 public:
@@ -25,6 +26,9 @@ public:
     void update();
     
     void draw();
+    
+    void drawBeamInOut(float fader);
+    
     void drawDebug();
     
     ofParameter<float> near_threshold, far_threshold;
@@ -67,12 +71,29 @@ private:
     void addMeshVertex(float x, float y, float z);
     void refreshRemoteMesh();
     
+    void tryCreateFlash(const ofVec3f &start, const ofVec3f &end);
+    
+    void beamFlash(const ofVec3f &vertex);
+    
     //opencv stuff
     ofxCvGrayscaleImage grayImage; // grayscale depth image
     ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
     ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
     ofxCvContourFinder contourFinder;
-
+    
+    float test_fader = 0;
+    
+    const int max_flashes = 200;
+    
+    const float flash_amplitude = 300.0f;
+    
+    const float flash_line_width = 2.0f;
+    
+    const int beam_flash_skip_vertices = 10;
+    
+    const float beam_flash_vertex_range = 10.0f;
+    
+    std::vector<meshFlash *> flash_list;
 };
 
 #endif /* defined(__readytocloud__meshMan__) */

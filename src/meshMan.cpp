@@ -99,41 +99,41 @@ void meshMan::updateFromKinect(){
                 }
             }
         }
-        else if (mesh_mode == mesh_mode_quads){
-            mesh.setMode(OF_PRIMITIVE_QUADS);
-            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
-                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
-                    float distance = kinect->getDistanceAt(x, y);
-                    if(distance > near_threshold && distance < far_threshold) {
-                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
-                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
-                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
-                        
-                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
-                            // apply offset
-                            current += offset;
-                            right += offset;
-                            below += offset;
-                            rightbelow += offset;
-                            
-                            if(mirror){
-                                current.x *= -1;
-                                right.x *= -1;
-                                below.x *= -1;
-                                rightbelow.x *= -1;
-                            }
-                            
-                            // apply the offset and add to the mesh
-                            mesh.addVertex(current);
-                            mesh.addVertex(right);
-                            mesh.addVertex(rightbelow);
-                            mesh.addVertex(below);
-                        }
-                    }
-                }
-            }
-        }
+//        else if (mesh_mode == mesh_mode_quads){
+//            mesh.setMode(OF_PRIMITIVE_QUADS);
+//            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
+//                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
+//                    float distance = kinect->getDistanceAt(x, y);
+//                    if(distance > near_threshold && distance < far_threshold) {
+//                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+//                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
+//                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
+//                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
+//                        
+//                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
+//                            // apply offset
+//                            current += offset;
+//                            right += offset;
+//                            below += offset;
+//                            rightbelow += offset;
+//                            
+//                            if(mirror){
+//                                current.x *= -1;
+//                                right.x *= -1;
+//                                below.x *= -1;
+//                                rightbelow.x *= -1;
+//                            }
+//                            
+//                            // apply the offset and add to the mesh
+//                            mesh.addVertex(current);
+//                            mesh.addVertex(right);
+//                            mesh.addVertex(rightbelow);
+//                            mesh.addVertex(below);
+//                        }
+//                    }
+//                }
+//            }
+//        }
         else if (mesh_mode == mesh_mode_lines){
             mesh.setMode(OF_PRIMITIVE_LINES);
             
@@ -271,9 +271,137 @@ void meshMan::updateFromNetwork(){
 
 //--------------------------------------------------------------
 void meshMan::draw(){
-    mesh.drawWireframe();
+    //mesh.drawWireframe();
+    // TEST
+    drawBeamInOut(test_fader);
+    test_fader += 0.01f;
+    if (test_fader > 1.0f) test_fader = 0;
+    
+    // END TEST
+    
     if(draw_contour) drawContour();
+
+    
+    // draw flashes
+    ofPushStyle();
+    ofSetLineWidth(flash_line_width);
+    for (int i=0; i<flash_list.size(); i++)
+        flash_list[i]->draw();
+    ofPopStyle();
 }
+
+
+//--------------------------------------------------------------
+
+
+void meshMan::tryCreateFlash(const ofVec3f &start, const ofVec3f &end)
+{
+    int i;
+    // find inactive
+    for (i=0; i<flash_list.size(); i++)
+    {
+        if (!flash_list[i]->isActive()) break;
+    }
+    
+    
+    if (i >= flash_list.size())
+    {
+        i = -1;
+        if (flash_list.size() < max_flashes)
+        {
+            flash_list.push_back(new meshFlash());
+            i = flash_list.size()-1;
+        }
+    }
+    
+    if (i>=0)
+    {
+        flash_list[i]->create(start, end, flash_amplitude);
+    }
+    
+}
+
+void meshMan::beamFlash(const ofVec3f &vertex)
+{
+    tryCreateFlash(ofVec3f(0,-1500,0), vertex);
+}
+
+
+void meshMan::drawBeamInOut(float fader)
+{
+    int numVerts = mesh.getNumVertices();
+    
+    ofVec3f *vertices = mesh.getVerticesPointer();
+    
+    int i;
+    
+    float minY = 100000.0f, maxY = -100000.0f;
+    
+    for (i=0; i<numVerts; i++)
+    {
+        if (vertices[i].y < minY) minY = vertices[i].y;
+        else if (vertices[i].y > maxY) maxY = vertices[i].y;
+    }
+    
+    float drawTreshold = maxY - (maxY-minY) * fader;
+    float flashTreshold = drawTreshold - beam_flash_vertex_range;
+
+    for (i=0; i<numVerts-10; i += (1 + beam_flash_skip_vertices))
+    {
+        if (vertices[i].y > flashTreshold && vertices[i].y < drawTreshold)
+        {
+            beamFlash(vertices[i]);
+        }
+    }
+   
+    
+    i=0;
+    
+    
+    
+    while (i < numVerts)
+    {
+        
+        ofNoFill();
+        switch(mesh.getMode())
+        {
+            case OF_PRIMITIVE_TRIANGLES:
+                if (vertices[i].y > drawTreshold && vertices[i+1].y > drawTreshold && vertices[i+2].y > drawTreshold)
+                {
+                    ofTriangle(vertices[i].x, vertices[i].y, vertices[i].z,   vertices[i+1].x, vertices[i+1].y, vertices[i+1].z,   vertices[i+2].x, vertices[i+2].y, vertices[i+2].z);
+                }
+                i+=3;
+                break;
+            case OF_PRIMITIVE_QUADS:
+                {
+                    ofPoint p1(vertices[i]);
+                    ofPoint p2(vertices[i]);
+                    ofPoint p3(vertices[i]);
+                    ofPoint p4(vertices[i]);
+                    
+                    if (p1.y > drawTreshold && p2.y > drawTreshold && p3.y > drawTreshold && p4.y > drawTreshold)
+                    {
+                        ofLine(p1, p2);
+                        ofLine(p2, p3);
+                        ofLine(p3, p4);
+                        ofLine(p4, p1);
+                    }
+                    i+=4;
+                }
+                break;
+            case OF_PRIMITIVE_LINES:
+                if (vertices[i].y > drawTreshold && vertices[i+1].y > drawTreshold)
+                {
+                    ofLine(vertices[i].x, vertices[i].y, vertices[i].z, vertices[i+1].x, vertices[i+1].y, vertices[i+1].z);
+                }
+                i+=2;
+                break;
+        }
+    }
+    
+}
+
+
 
 //--------------------------------------------------------------
 void meshMan::addMeshVertex(float x, float y, float z){
