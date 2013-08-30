@@ -163,12 +163,7 @@ void meshMan::updateFromKinect(){
             }
         }
         
-        if(transceiver->isConnected())
-            transceiver->send(&mesh);
-        
-        
-        
-        
+        transceiver->send(&mesh);
         
         
         // TODO: reactivate this autocenter stuff
