@@ -20,10 +20,10 @@ void meshInteractor::setup(meshMan *local, meshMan* remote){
 
 void meshInteractor::update(){
     intersectors.clear();
-    for(int l = 0; l < local->getMesh()->getNumVertices(); l++){
-        for(int r = 0; r < remote->getMesh()->getNumVertices(); r++ ){
+    for(int l = 0; l < local->getMesh()->getNumVertices()-10; l+=10){
+        for(int r = 0; r < remote->getMesh()->getNumVertices()-10; r+=10 ){
             float distance = local->getMesh()->getVertex(l).distance(remote->getMesh()->getVertex(r));
-            if (distance < 100){
+            if (distance < 300){
                 intersectors.push_back(local->getMesh()->getVertex(l));
                 intersectors.push_back(remote->getMesh()->getVertex(r));
             }
