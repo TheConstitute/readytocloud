@@ -48,6 +48,8 @@
 		B911300017C4D0C80098C4B2 /* LEDRing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9112FFB17C4D0C80098C4B2 /* LEDRing.cpp */; };
 		B911300117C4D0C80098C4B2 /* StairvilleLEDParSpot.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9112FFD17C4D0C80098C4B2 /* StairvilleLEDParSpot.cpp */; };
 		B911300417C4D7B30098C4B2 /* meshMan.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B911300217C4D7B30098C4B2 /* meshMan.cpp */; };
+		B96EFDEB17CE0F9800826038 /* meshInteractor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B96EFDE917CE0F9700826038 /* meshInteractor.cpp */; };
+		B9E8E4C717D0A154007F1363 /* meshFlash.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9E8E4C517D0A154007F1363 /* meshFlash.cpp */; };
 		BBAB23CB13894F3D00AA2426 /* GLUT.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = BBAB23BE13894E4700AA2426 /* GLUT.framework */; };
 		C4782ECC372420ACE0615B74 /* OscPrintReceivedElements.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BC8881B3C8C0A1C45F042E7A /* OscPrintReceivedElements.cpp */; };
 		D31F5C1B140C59B2AF1533A8 /* registration.c in Sources */ = {isa = PBXBuildFile; fileRef = 71958293AC5292DE4B7C619D /* registration.c */; };
@@ -247,6 +249,10 @@
 		B9112FFE17C4D0C80098C4B2 /* StairvilleLEDParSpot.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StairvilleLEDParSpot.h; sourceTree = "<group>"; };
 		B911300217C4D7B30098C4B2 /* meshMan.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = meshMan.cpp; sourceTree = "<group>"; };
 		B911300317C4D7B30098C4B2 /* meshMan.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = meshMan.h; sourceTree = "<group>"; };
+		B96EFDE917CE0F9700826038 /* meshInteractor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = meshInteractor.cpp; sourceTree = "<group>"; };
+		B96EFDEA17CE0F9800826038 /* meshInteractor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = meshInteractor.h; sourceTree = "<group>"; };
+		B9E8E4C517D0A154007F1363 /* meshFlash.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = meshFlash.cpp; sourceTree = "<group>"; };
+		B9E8E4C617D0A154007F1363 /* meshFlash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = meshFlash.h; sourceTree = "<group>"; };
 		BBAB23BE13894E4700AA2426 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = ../../../libs/glut/lib/osx/GLUT.framework; sourceTree = "<group>"; };
 		BC8881B3C8C0A1C45F042E7A /* OscPrintReceivedElements.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = OscPrintReceivedElements.cpp; path = ../../../addons/ofxOsc/libs/oscpack/src/osc/OscPrintReceivedElements.cpp; sourceTree = SOURCE_ROOT; };
 		BCF95CE25C02631B7BF14CB3 /* libfreenect-registration.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = "libfreenect-registration.h"; path = "../../../addons/ofxKinect/libs/libfreenect/include/libfreenect-registration.h"; sourceTree = SOURCE_ROOT; };
@@ -934,8 +940,12 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				B9E8E4C517D0A154007F1363 /* meshFlash.cpp */,
+				B9E8E4C617D0A154007F1363 /* meshFlash.h */,
 				B9066E1C17C8F03E00507F67 /* meshTransceiver.cpp */,
 				B9066E1D17C8F03E00507F67 /* meshTransceiver.h */,
+				B96EFDE917CE0F9700826038 /* meshInteractor.cpp */,
+				B96EFDEA17CE0F9800826038 /* meshInteractor.h */,
 				B95F9D0D17C6286E002BE830 /* dmxDevices */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* testApp.h */,
@@ -1162,6 +1172,8 @@
 				B911300117C4D0C80098C4B2 /* StairvilleLEDParSpot.cpp in Sources */,
 				B911300417C4D7B30098C4B2 /* meshMan.cpp in Sources */,
 				B9066E1E17C8F03E00507F67 /* meshTransceiver.cpp in Sources */,
+				B96EFDEB17CE0F9800826038 /* meshInteractor.cpp in Sources */,
+				B9E8E4C717D0A154007F1363 /* meshFlash.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
