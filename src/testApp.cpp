@@ -15,16 +15,6 @@ void testApp::setup() {
     
     // TODO: add possibility to playback recorded kinect data
     
-    /* DMX SETUP */
-    dmx.connect(dmx_entec_port, 35);
-    spotInteraction1.setup(&dmx, 8);
-    spotInteraction2.setup(&dmx, 15);
-    spotCloud1.setup(&dmx, 22);
-    spotCloud2.setup(&dmx, 29);
-    ledRingInteraction.setup(&dmx, 2);
-    fogMachine.setup(&dmx, 1);
-    dmxUpdate();
-    
     
     // GUI
     local_mesh_parameters.setName("local mesh parameters");
@@ -81,6 +71,20 @@ void testApp::setup() {
     gui.add(dmx_parameters);
     gui.add(light_parameters);
     gui.loadFromFile("settings.xml");
+    
+    
+    /* DMX SETUP */
+    dmx.connect(dmx_entec_port, 35);
+    spotInteraction1.setup(&dmx, 8);
+    spotInteraction2.setup(&dmx, 15);
+    spotCloud1.setup(&dmx, 22);
+    spotCloud2.setup(&dmx, 29);
+    ledRingInteraction.setup(&dmx, 2);
+    fogMachine.setup(&dmx, 1);
+    spotCloud1.setColor(255, 0, 0);
+    spotCloud1.setBrightness(255);
+    dmxUpdate();
+    
     
     // gui3d
     gui3d.setup("positioning", "positioning.xml", 800, 30);
