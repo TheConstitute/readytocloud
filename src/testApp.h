@@ -88,10 +88,7 @@ class testApp : public ofBaseApp{
     ofParameter<float> line_width;
     ofParameter<bool> hide_remote;
     
-    // DEBUG DRAW SETTINGS
-    bool use_easy_cam;
-    bool draw_grid;
-    bool draw_setup_cams;
+    ofParameterGroup interaction_parameters;
     
     /* LIGHT PARAMETERS */
     ofParameterGroup light_parameters;
@@ -108,7 +105,10 @@ class testApp : public ofBaseApp{
     LEDRing ledRingInteraction;
     FogMachine fogMachine;
     
-
+    // DEBUG DRAW SETTINGS
+    bool use_easy_cam;
+    bool draw_grid;
+    bool draw_setup_cams;
     
     bool lightStateChanged = true;
     bool settingsChanged = true;

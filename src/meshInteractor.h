@@ -20,11 +20,14 @@ public:
     void update();
     void draw();
     
+    ofParameter<int> resolution;
+    ofParameter<ofColor> color;
+    ofParameter<float> distance;
+    
 private:
     meshMan* local;
     meshMan* remote;
     vector<ofVec3f> intersectors;
-    
 };
 
 

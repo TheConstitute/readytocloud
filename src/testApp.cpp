@@ -37,6 +37,11 @@ void testApp::setup() {
     local_mesh_parameters.add(y_correction_local.set("y correction local", 0, -1000, 1000));
     local_mesh_parameters.add(local_mesh.mirror.set("mirror", false));
 
+    interaction_parameters.setName("interaction parameters");
+    interaction_parameters.add(mesh_interactor.distance.set("distance", 300, 0, 2000));
+    interaction_parameters.add(mesh_interactor.resolution.set("resolution", 10, 1, 100));
+    interaction_parameters.add(mesh_interactor.color.set("color", ofColor(0, 255, 0)));
+    
     network_parameters.setName("network parameters");
     network_parameters.add(hide_remote.set("hide remote", false));
     network_parameters.add(activate_network.set("activate network", true));
@@ -70,12 +75,20 @@ void testApp::setup() {
     
     gui.setup(); 
     gui.add(local_mesh_parameters);
+    gui.add(interaction_parameters);
     gui.add(network_parameters);
     gui.add(osc_parameters);
     gui.add(dmx_parameters);
     gui.add(light_parameters);
     gui.loadFromFile("settings.xml");
     
+    // gui3d
+    gui3d.setup("positioning", "positioning.xml", 800, 30);
+    gui3d.add(local_mesh.offset.set("local mesh offset", ofVec3f(0, 0, -3000), ofVec3f(-5000,-5000,-5000), ofVec3f(5000,5000,5000)));
+    gui3d.loadFromFile("positioning.xml");
+    
+    draw_gui3d = false;
+    draw_gui = false;
     
     /* DMX SETUP */
     dmx.connect(dmx_entec_port, 35);
@@ -88,14 +101,6 @@ void testApp::setup() {
     spotCloud1.setColor(255, 0, 0);
     spotCloud1.setBrightness(255);
     dmxUpdate();
-    
-    // gui3d
-    gui3d.setup("positioning", "positioning.xml", 800, 30);
-    gui3d.add(local_mesh.offset.set("local mesh offset", ofVec3f(0, 0, -3000), ofVec3f(-5000,-5000,-5000), ofVec3f(5000,5000,5000)));
-    gui3d.loadFromFile("positioning.xml");
-    
-    draw_gui3d = false;
-    draw_gui = false;
     
     if(activate_network){
         mesh_transceiver.setup(local_port, server_ip, remote_port);
