@@ -276,7 +276,6 @@ void meshMan::draw(){
     drawBeamInOut(test_fader);
     test_fader += 0.01f;
     if (test_fader > 1.0f) test_fader = 0;
-    
     // END TEST
     
     if(draw_contour) drawContour();
@@ -321,12 +320,13 @@ void meshMan::tryCreateFlash(const ofVec3f &start, const ofVec3f &end)
     
 }
 
+//--------------------------------------------------------------
 void meshMan::beamFlash(const ofVec3f &vertex)
 {
     tryCreateFlash(ofVec3f(0,-1500,0), vertex);
 }
 
-
+//--------------------------------------------------------------
 void meshMan::drawBeamInOut(float fader)
 {
     int numVerts = mesh.getNumVertices();
