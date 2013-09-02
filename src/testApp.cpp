@@ -117,31 +117,11 @@ void testApp::setup() {
     use_easy_cam = false;
     draw_grid = false;
     
-    
-    /* VIDEO LAYERS */
-    overlay_in_local.setPixelFormat(OF_PIXELS_RGBA);
-	overlay_in_local.loadMovie("tornado-beam_in.mov");
-    overlay_in_local.setLoopState(OF_LOOP_NONE);
-    
-    overlay_out_local.setPixelFormat(OF_PIXELS_RGBA);
-	overlay_out_local.loadMovie("tornado-beam_out.mov");
-    overlay_out_local.setLoopState(OF_LOOP_NONE);
-    
-    overlay_in_remote.setPixelFormat(OF_PIXELS_RGBA);
-	overlay_in_remote.loadMovie("tornado-beam_in.mov");
-    overlay_in_remote.setLoopState(OF_LOOP_NONE);
-    
-    overlay_out_remote.setPixelFormat(OF_PIXELS_RGBA);
-	overlay_out_remote.loadMovie("tornado-beam_out.mov");
-    overlay_out_remote.setLoopState(OF_LOOP_NONE);
-    
-
-    
     // push all settings to the ipad
     lightStateChanged = true;
     oscUpdateAll();
 
-//    ofHideCursor();
+    ofHideCursor();
     
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
 
@@ -162,12 +142,6 @@ void testApp::update() {
         mesh_interactor.update();
     
     oscUpdate();
-    
-    /* UPDATE VIDEOS */
-    overlay_in_local.update();
-    overlay_out_local.update();
-    overlay_in_remote.update();
-    overlay_out_remote.update();
     
     /* update DMX */
     updateScene();
@@ -300,7 +274,7 @@ void testApp::updateScene(){
                 break;
             case 4: // beam in
                 fogMachine.fogOff();
-                beamIn_local();
+                local_mesh.beamIn();
                 
                 // shut down cloud and interaction spots
                 spotInteraction1.fadeOut();
@@ -309,9 +283,11 @@ void testApp::updateScene(){
                 spotCloud2.fadeOut();
                 break;
             case 5:
-                beamIn_remote();                
+                remote_mesh.beamIn();
             case 6: // beam out
-                beamOut_local();
+                remote_mesh.beamOut();
+                local_mesh.beamOut();
+                
                 spotInteraction1.fadeIn();
                 spotInteraction2.fadeIn();
                 break;
@@ -347,62 +323,14 @@ void testApp::exit() {
 }
 
 //--------------------------------------------------------------
-void testApp::beamIn_local(){
-    if(!b_overlay_in_local){
-        overlay_in_local.play();
-        b_overlay_in_local = true;
-        b_overlay_out_local = false;
-        firstFrame_local = true;
-        fadeAlpha_local = true;
-        fadeStartTime_local = ofGetElapsedTimef();
-    }
-}
-
-//--------------------------------------------------------------
-void testApp::beamIn_remote(){
-    if(!b_overlay_in_remote){
-        overlay_in_remote.play();
-        b_overlay_in_remote = true;
-        b_overlay_out_remote = false;
-        firstFrame_remote = true;
-        fadeAlpha_remote = true;
-        fadeStartTime_remote = ofGetElapsedTimef();
-    }
-}
-
-//--------------------------------------------------------------
-void testApp::beamOut_local(){
-    if(b_overlay_in_local)
-    {
-        overlay_out_local.play();
-        b_overlay_in_local = false;
-        b_overlay_out_local = true;
-        fadeAlpha_local = false;
-        fadeStartTime_local = ofGetElapsedTimef();
-    }
-}
-
-//--------------------------------------------------------------
-void testApp::beamOut_remote(){
-    if(b_overlay_in_remote)
-    {
-        overlay_out_remote.play();
-        b_overlay_in_remote = false;
-        b_overlay_out_remote = true;
-        fadeAlpha_remote = false;
-        fadeStartTime_remote = ofGetElapsedTimef();
-    }
-}
-
-//--------------------------------------------------------------
 void testApp::keyPressed (int key) {
 	switch (key) {
         case 'i':
-            beamIn_local();
+            local_mesh.beamIn();
 			break;
         
         case 'o':
-            beamOut_local();
+            local_mesh.beamOut();
             break;
             
         case '+':
@@ -528,8 +456,8 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/settings/load") { /* TODO: load settings */ }
         else if (m.getAddress() == "/settings/updateall") { oscUpdateAll(); }
         
-        else if (m.getAddress() == "/remote/in") { beamIn_remote(); }
-        else if (m.getAddress() == "/remote/out") { beamOut_remote(); }
+        else if (m.getAddress() == "/remote/in") { remote_mesh.beamIn(); }
+        else if (m.getAddress() == "/remote/out") { remote_mesh.beamOut(); }
         
     }
     

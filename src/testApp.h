@@ -50,17 +50,6 @@ class testApp : public ofBaseApp{
         ofVideoPlayer overlay_out_local;
         ofVideoPlayer overlay_in_remote;
         ofVideoPlayer overlay_out_remote;
-    
-        void beamIn_local();
-        void beamOut_local();
-        void beamIn_remote();
-        void beamOut_remote();
-
-        bool b_overlay_in_local = false;
-        bool b_overlay_out_local = false;
-        bool b_overlay_in_remote = false;
-        bool b_overlay_out_remote = false;
-        bool b_clouds = false;
 
         ofCamera camera;
         ofEasyCam easyCam;
