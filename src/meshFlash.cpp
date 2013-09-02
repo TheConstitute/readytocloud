@@ -32,7 +32,7 @@ void meshFlash::getPerpendicular(const ofVec3f &vec, ofVec3f &pv)
     pv.normalize();
 }
 
-void meshFlash::setColor(ofColor &color)
+void meshFlash::setColor(ofColor color)
 {
     flash_color.set(color);
 }
@@ -105,15 +105,14 @@ void meshFlash::draw(void)
     if (!is_active || mesh.getNumVertices() == 0) return;
     
     float timeToLive = live_time - (ofGetElapsedTimef() - creationTime);
-    if (timeToLive < 0)
-    {
+    if (timeToLive < 0){
         timeToLive = 0;
         is_active = false;
     }
     
     ofPushStyle();
-    ofSetColor(flash_color, (int)(timeToLive * 255.0f / live_time));
-    mesh.drawWireframe();
+        ofSetColor(flash_color, (int)(timeToLive * 255.0f / live_time));
+        mesh.drawWireframe();
     ofPopStyle();    
 }
 

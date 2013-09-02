@@ -23,11 +23,14 @@ public:
     ofParameter<int> resolution;
     ofParameter<ofColor> color;
     ofParameter<float> distance;
+    ofParameter<float> line_width;
     
 private:
+    void tryCreateFlash(const ofVec3f &start, const ofVec3f &end);
     meshMan* local;
     meshMan* remote;
-    vector<ofVec3f> intersectors;
+    vector<meshFlash *> flash_list;
+    int max_flashes = 500;
 };
 
 

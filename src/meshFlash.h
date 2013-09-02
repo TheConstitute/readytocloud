@@ -18,7 +18,7 @@ public:
 
     meshFlash();
 
-    void setColor(ofColor &color);
+    void setColor(ofColor color);
     
     void create(ofVec3f start, ofVec3f end, float amplitude);
     
