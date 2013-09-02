@@ -390,6 +390,7 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/dmx_state/3") { dmx_state_remote = 3; }
         else if (m.getAddress() == "/dmx_state/4") { dmx_state_remote = 4; }
         else if (m.getAddress() == "/dmx_state/5") { dmx_state_remote = 5; }
+        else if (m.getAddress() == "/dmx_state/6") { dmx_state_remote = 6; remote_mesh.beamOut(); }
     }
     
     
@@ -406,6 +407,7 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/lightState/3") { dmx_state = 3; lightStateChanged = true; }
         else if (m.getAddress() == "/lightState/4") { dmx_state = 4; lightStateChanged = true; }
         else if (m.getAddress() == "/lightState/5") { dmx_state = 5; lightStateChanged = true; }
+        else if (m.getAddress() == "/lightState/6") { dmx_state = 6; lightStateChanged = true; }
         
         // mesh settings
         else if (m.getAddress() == "/mesh/local/scale") { local_mesh_scale = m.getArgAsFloat(0); }
