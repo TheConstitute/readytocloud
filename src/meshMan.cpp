@@ -27,8 +27,11 @@ meshMan::meshMan(){
 	grayThreshNear.allocate(kinect->width, kinect->height);
 	grayThreshFar.allocate(kinect->width, kinect->height);
     
+    beam_in = false;
+    beam_out = false;
 }
 
+//--------------------------------------------------------------
 void meshMan::update(){
     frame_new = false;
     
@@ -42,6 +45,7 @@ void meshMan::update(){
     }
 }
 
+//--------------------------------------------------------------
 void meshMan::setup(meshTransceiver* transceiver, ofxKinect* kinect){
     this->transceiver = transceiver;
     
@@ -99,41 +103,41 @@ void meshMan::updateFromKinect(){
                 }
             }
         }
-//        else if (mesh_mode == mesh_mode_quads){
-//            mesh.setMode(OF_PRIMITIVE_QUADS);
-//            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
-//                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
-//                    float distance = kinect->getDistanceAt(x, y);
-//                    if(distance > near_threshold && distance < far_threshold) {
-//                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-//                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
-//                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
-//                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
-//                        
-//                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
-//                            // apply offset
-//                            current += offset;
-//                            right += offset;
-//                            below += offset;
-//                            rightbelow += offset;
-//                            
-//                            if(mirror){
-//                                current.x *= -1;
-//                                right.x *= -1;
-//                                below.x *= -1;
-//                                rightbelow.x *= -1;
-//                            }
-//                            
-//                            // apply the offset and add to the mesh
-//                            mesh.addVertex(current);
-//                            mesh.addVertex(right);
-//                            mesh.addVertex(rightbelow);
-//                            mesh.addVertex(below);
-//                        }
-//                    }
-//                }
-//            }
-//        }
+        else if (mesh_mode == mesh_mode_quads){
+            mesh.setMode(OF_PRIMITIVE_QUADS);
+            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
+                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
+                    float distance = kinect->getDistanceAt(x, y);
+                    if(distance > near_threshold && distance < far_threshold) {
+                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
+                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
+                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
+                        
+                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
+                            // apply offset
+                            current += offset;
+                            right += offset;
+                            below += offset;
+                            rightbelow += offset;
+                            
+                            if(mirror){
+                                current.x *= -1;
+                                right.x *= -1;
+                                below.x *= -1;
+                                rightbelow.x *= -1;
+                            }
+                            
+                            // apply the offset and add to the mesh
+                            mesh.addVertex(current);
+                            mesh.addVertex(right);
+                            mesh.addVertex(rightbelow);
+                            mesh.addVertex(below);
+                        }
+                    }
+                }
+            }
+        }
         else if (mesh_mode == mesh_mode_lines){
             mesh.setMode(OF_PRIMITIVE_LINES);
             
@@ -197,6 +201,7 @@ void meshMan::updateFromKinect(){
     }
 }
 
+//--------------------------------------------------------------
 void meshMan::drawContour(){
     // get the contour
     grayImage.setFromPixels(kinect->getDepthPixels(), kinect->width, kinect->height);
@@ -234,6 +239,7 @@ void meshMan::drawContour(){
     }
 }
 
+//--------------------------------------------------------------
 void meshMan::drawDebug(){
     grayImage.draw(0, 0, 320, 240);
     grayThreshFar.draw(330, 0, 320, 240);
@@ -241,46 +247,35 @@ void meshMan::drawDebug(){
     contourFinder.draw(330, 250, 320, 240);
 }
 
-void meshMan::updateFromNetwork(){    
+//--------------------------------------------------------------
+void meshMan::updateFromNetwork(){
     if(transceiver->receive(&temp_mesh)){
         mesh = ofMesh(temp_mesh);
         frame_new = true;
     }
-
-
-    // TODO: redo this
-//    // get the data from the clients
-//    if(tcpServer.getNumClients() > 0) receiveTCP();
-//    
-//    // try to setup the connection if it is broken every 5 seconds
-//    if(!connected && (ofGetElapsedTimef() - lastConnectionCheck) > 5.0) {
-//        // versuch: tcpserver zurücksetzen
-//        // if(tcpServer. getNumClients()>0) {
-//        // disconnect the clients
-//        // for(int i=0; i<tcpServer.getNumClients(); i++) {
-//        //tcpServer.disconnectClient(i);
-//        // ofLog()<< "server disconnected client " << ofToString(i);
-//        //}
-//        //}
-//        connected = tcpClient.setup(SERVER_IP, REMOTE_SERVER_PORT);
-//        if(connected) ofLog() << "client is connected to server " << tcpClient.getIP() << ":" << tcpClient.getPort();
-//        lastConnectionCheck = ofGetElapsedTimef();
-//    }
-//    else if(!tcpClient.isConnected()){ connected = false; }
 }
 
 //--------------------------------------------------------------
 void meshMan::draw(){
-    //mesh.drawWireframe();
-    // TEST
-    drawBeamInOut(test_fader);
-    test_fader += 0.01f;
-    if (test_fader > 1.0f) test_fader = 0;
-    // END TEST
-    
-    if(draw_contour) drawContour();
+    if(beam_in){
+        hide = false;
+        drawBeamInOut(fader);
+        fader += 0.01f;
+        if (fader >= 1.0f) beam_in = false;
+    }
+    else if (beam_out) {
+        drawBeamInOut(fader);
+        fader -= 0.01f;
+        if (fader <= 0){
+            beam_out = false;
+            hide = true;
+        }
+    }
+    else if (!hide) {
+        mesh.drawWireframe();
+        if(draw_contour) drawContour();
+    }
 
-    
     // draw flashes
     ofPushStyle();
     ofSetLineWidth(flash_line_width);
@@ -289,35 +284,41 @@ void meshMan::draw(){
     ofPopStyle();
 }
 
+//--------------------------------------------------------------
+void meshMan::beamIn(){
+    beam_in = true;
+    beam_out = false;
+    fader = 0;
+}
 
 //--------------------------------------------------------------
+void meshMan::beamOut(){
+    beam_out = true;
+    beam_in = false;
+    fader = 1;
+}
 
-
+//--------------------------------------------------------------
 void meshMan::tryCreateFlash(const ofVec3f &start, const ofVec3f &end)
 {
     int i;
     // find inactive
-    for (i=0; i<flash_list.size(); i++)
-    {
+    for (i=0; i<flash_list.size(); i++) {
         if (!flash_list[i]->isActive()) break;
     }
     
     
-    if (i >= flash_list.size())
-    {
+    if (i >= flash_list.size()) {
         i = -1;
-        if (flash_list.size() < max_flashes)
-        {
+        if (flash_list.size() < max_flashes) {
             flash_list.push_back(new meshFlash());
             i = flash_list.size()-1;
         }
     }
     
-    if (i>=0)
-    {
+    if (i>=0) {
         flash_list[i]->create(start, end, flash_amplitude);
-    }
-    
+    }    
 }
 
 //--------------------------------------------------------------
@@ -357,17 +358,14 @@ void meshMan::drawBeamInOut(float fader)
     
     i=0;
     
-    
-    
+    // draw the mesh "by hand"
     while (i < numVerts)
     {
-        
         ofNoFill();
         switch(mesh.getMode())
         {
             case OF_PRIMITIVE_TRIANGLES:
-                if (vertices[i].y > drawTreshold && vertices[i+1].y > drawTreshold && vertices[i+2].y > drawTreshold)
-                {
+                if (vertices[i].y > drawTreshold && vertices[i+1].y > drawTreshold && vertices[i+2].y > drawTreshold) {
                     ofTriangle(vertices[i].x, vertices[i].y, vertices[i].z,   vertices[i+1].x, vertices[i+1].y, vertices[i+1].z,   vertices[i+2].x, vertices[i+2].y, vertices[i+2].z);
                 }
                 i+=3;
@@ -379,8 +377,7 @@ void meshMan::drawBeamInOut(float fader)
                     ofPoint p3(vertices[i]);
                     ofPoint p4(vertices[i]);
                     
-                    if (p1.y > drawTreshold && p2.y > drawTreshold && p3.y > drawTreshold && p4.y > drawTreshold)
-                    {
+                    if (p1.y > drawTreshold && p2.y > drawTreshold && p3.y > drawTreshold && p4.y > drawTreshold) {
                         ofLine(p1, p2);
                         ofLine(p2, p3);
                         ofLine(p3, p4);
@@ -389,9 +386,9 @@ void meshMan::drawBeamInOut(float fader)
                     i+=4;
                 }
                 break;
+                
             case OF_PRIMITIVE_LINES:
-                if (vertices[i].y > drawTreshold && vertices[i+1].y > drawTreshold)
-                {
+                if (vertices[i].y > drawTreshold && vertices[i+1].y > drawTreshold) {
                     ofLine(vertices[i].x, vertices[i].y, vertices[i].z, vertices[i+1].x, vertices[i+1].y, vertices[i+1].z);
                 }
                 i+=2;
@@ -401,18 +398,10 @@ void meshMan::drawBeamInOut(float fader)
     
 }
 
-
-
 //--------------------------------------------------------------
 void meshMan::addMeshVertex(float x, float y, float z){
     ofVec3f v;
     v.x = x;
     v.y = y;
     v.z = z;
-}
-
-//--------------------------------------------------------------
-void meshMan::refreshRemoteMesh(){
-//    remoteMeshes[user] = ofMesh(remoteMeshesTemp[user]);
-//    remoteMeshesTemp[user].clear();
 }

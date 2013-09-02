@@ -182,7 +182,7 @@ void testApp::draw() {
     fboLocal.begin();
         ofPushStyle();
         ofClear(0, 0, 0, 0);
-        ofSetColor(colorCharacter_local, alpha_local);
+        ofSetColor(colorCharacter_local);
 
         camera.setGlobalPosition(0, camera_offset_y, local_mesh_scale);
         camera.setFov(fov);
@@ -199,54 +199,10 @@ void testApp::draw() {
 
         if(use_easy_cam)easyCam.end();
         else camera.end();
-
-//        // set alpha back to 255 when drawing the beam
-//        ofSetColor(colorCharacter_local, 255);
-//        if(b_overlay_in_local){
-//            ofEnableAlphaBlending();
-//            overlay_in_local.draw(0,0, ofGetWidth(), ofGetHeight());
-//            ofDisableAlphaBlending();
-//            firstFrame_local = false;
-//        }
-//        if(b_overlay_out_local){
-//            ofEnableAlphaBlending();
-//            overlay_out_local.draw(0,0, ofGetWidth(), ofGetHeight());
-//            ofDisableAlphaBlending();
-//        }
         ofPopStyle();
     fboLocal.end();
     
-    if(!fadeAlpha_local && ofGetElapsedTimef() - fadeStartTime_local > 2)
-    {
-        if(alpha_local > 0)
-            alpha_local-=7;
-        else alpha_local = 0;
-    }
-    else if (ofGetElapsedTimef() - fadeStartTime_local > 3)
-    {
-        if(alpha_local < 255)
-            alpha_local+=7;
-        else alpha_local=255;
-    }
-
-    
-    if(!fadeAlpha_remote && ofGetElapsedTimef() - fadeStartTime_remote > 2)
-    {
-        if(alpha_remote > 0)
-            alpha_remote-=7;
-        else alpha_remote = 0;
-    }
-    else if (ofGetElapsedTimef() - fadeStartTime_remote > 2)
-    {
-        if(alpha_remote < 255)
-            alpha_remote+=7;
-        else alpha_remote = 255;
-    }
-    
-    
-    ofEnableAlphaBlending();
-        fboLocal.draw(x_correction_local, -y_correction_local);
-    ofDisableAlphaBlending();
+    fboLocal.draw(x_correction_local, -y_correction_local);
 
     ofPopMatrix();
     
@@ -281,10 +237,15 @@ void testApp::nextState(){
     ofLog() << "entering state " << ofToString(dmx_state);
 }
 
+//--------------------------------------------------------------
 void testApp::stateChanged(int &state){
     ofxOscMessage message;
     message.setAddress("/dmx_state/" + ofToString(state));
     state_sender.sendMessage(message);
+    if(state == 1)
+        local_mesh.beamOut();
+    else if (state == 2)
+        local_mesh.beamIn();
 }
 
 //--------------------------------------------------------------
