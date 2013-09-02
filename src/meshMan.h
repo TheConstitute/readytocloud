@@ -70,12 +70,15 @@ private:
     
     enum modes{ mode_kinect, mode_network} mode;
     enum mesh_modes {mesh_mode_triangles, mesh_mode_quads, mesh_mode_lines, mesh_mode_points, mesh_mode_cross_lines};
+    enum beam_states {beaming_in, beamed_in, beaming_out, beamed_out} beam_state;
     
     //opencv stuff
     ofxCvGrayscaleImage grayImage; // grayscale depth image
     ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
     ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
     ofxCvContourFinder contourFinder;
+    
+
     
     float fader = 0;
     bool hide = false;
@@ -85,7 +88,6 @@ private:
     const int beam_flash_skip_vertices = 10;
     const float beam_flash_vertex_range = 10.0f;
     vector<meshFlash *> flash_list;
-    bool beam_in, beam_out;
 };
 
 #endif /* defined(__readytocloud__meshMan__) */

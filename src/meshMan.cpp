@@ -27,8 +27,7 @@ meshMan::meshMan(){
 	grayThreshNear.allocate(kinect->width, kinect->height);
 	grayThreshFar.allocate(kinect->width, kinect->height);
     
-    beam_in = false;
-    beam_out = false;
+    beam_state = beamed_out;
 }
 
 //--------------------------------------------------------------
@@ -257,23 +256,25 @@ void meshMan::updateFromNetwork(){
 
 //--------------------------------------------------------------
 void meshMan::draw(){
-    if(beam_in){
-        hide = false;
-        drawBeamInOut(fader);
-        fader += 0.01f;
-        if (fader >= 1.0f) beam_in = false;
-    }
-    else if (beam_out) {
-        drawBeamInOut(fader);
-        fader -= 0.01f;
-        if (fader <= 0){
-            beam_out = false;
-            hide = true;
-        }
-    }
-    else if (!hide) {
-        mesh.drawWireframe();
-        if(draw_contour) drawContour();
+    switch(beam_state){
+        case beaming_in:
+            hide = false;
+            drawBeamInOut(fader);
+            fader += 0.01f;
+            if (fader >= 1.0f) beam_state = beamed_in;
+            break;
+        case beaming_out:
+            drawBeamInOut(fader);
+            fader -= 0.01f;
+            if (fader <= 0) beam_state = beamed_out;
+            break;
+        case beamed_in:
+            mesh.drawWireframe();
+            if(draw_contour) drawContour();
+            break;
+        case beamed_out:
+            // draw nothing
+            break;
     }
 
     // draw flashes
@@ -286,16 +287,18 @@ void meshMan::draw(){
 
 //--------------------------------------------------------------
 void meshMan::beamIn(){
-    beam_in = true;
-    beam_out = false;
-    fader = 0;
+    if(beam_state != beaming_in || beamed_in){
+        beam_state = beaming_in;
+        fader = 0;
+    }
 }
 
 //--------------------------------------------------------------
 void meshMan::beamOut(){
-    beam_out = true;
-    beam_in = false;
-    fader = 1;
+    if(beam_state != beaming_out || beamed_out){
+        beam_state = beaming_out;
+        fader = 1;
+    }
 }
 
 //--------------------------------------------------------------
