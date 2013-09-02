@@ -26,6 +26,9 @@ class testApp : public ofBaseApp{
         void addMeshVertex(float x, float y, float z, int user);
         void refreshRemoteMesh(int user);
     
+        // event listeners
+        void stateChanged(int &state);
+    
         // INITIALIZATION & UPDATER
         void oscUpdate();
         void oscUpdateAll();
@@ -62,8 +65,12 @@ class testApp : public ofBaseApp{
         ofCamera camera;
         ofEasyCam easyCam;
     
-        ofxOscReceiver oscReceiver;
-        ofxOscSender oscSender;
+        ofxOscReceiver ipadReceiver;
+        ofxOscSender ipadSender;
+        ofxOscReceiver state_receiver;
+        ofxOscSender state_sender;
+
+    
     
     /* NETWORK PARAMETERS */
     ofParameterGroup network_parameters;
@@ -97,21 +104,22 @@ class testApp : public ofBaseApp{
     bool draw_grid;
     bool draw_setup_cams;
     
-    
-    
     /* LIGHT PARAMETERS */
     ofParameterGroup light_parameters;
     
-    
     /* DMX */
    	ofxDmx dmx;
+    ofParameter<int> state_sync_port_local;
+    ofParameter<int> state_sync_port_remote;
+    ofParameter<int> dmx_state = 0;
+    ofParameter<int> dmx_state_remote;
 
     /* lights */
     StairvilleLEDParSpot spotInteraction1, spotInteraction2, spotCloud1, spotCloud2;
     LEDRing ledRingInteraction;
     FogMachine fogMachine;
     
-    int dmx_state = 0;
+
     
     bool lightStateChanged = true;
     bool settingsChanged = true;
@@ -121,8 +129,6 @@ class testApp : public ofBaseApp{
     
     bool local_autocenter = true;
     bool remote_autocenter = false;
-
-
     
     ofVec3f mesh_local_center;
     ofVec3f mesh_remote_center;

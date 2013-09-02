@@ -43,6 +43,8 @@ void testApp::setup() {
     network_parameters.add(local_port.set("local port", 7000));
     network_parameters.add(server_ip.set("server ip", "localhost"));
     network_parameters.add(remote_port.set("remote port", 8000));
+    network_parameters.add(state_sync_port_local.set("state_sync_port_local", 6666, 0, 10000));
+    network_parameters.add(state_sync_port_remote.set("state_sync_port_remote", 6667, 0, 10000));
     
     osc_parameters.setName("osc parameters");
     osc_parameters.add(osc_port_send.set("osc port send", 7001));
@@ -51,6 +53,8 @@ void testApp::setup() {
     
     dmx_parameters.setName("dmx parameters");
     dmx_parameters.add(dmx_entec_port.set("dmx entec port", "tty.usbserial-EN118363"));
+    dmx_parameters.add(dmx_state.set("dmx state", 0, 0, 6));
+    dmx_parameters.add(dmx_state_remote.set("dmx state remote", 0, 0, 6));
     
     light_parameters.setName("light parameters");
     light_parameters.add(ledRingInteraction.pulseMin.set("ring pulse min", 8, 0, 255));
@@ -85,7 +89,6 @@ void testApp::setup() {
     spotCloud1.setBrightness(255);
     dmxUpdate();
     
-    
     // gui3d
     gui3d.setup("positioning", "positioning.xml", 800, 30);
     gui3d.add(local_mesh.offset.set("local mesh offset", ofVec3f(0, 0, -3000), ofVec3f(-5000,-5000,-5000), ofVec3f(5000,5000,5000)));
@@ -102,6 +105,14 @@ void testApp::setup() {
     local_mesh.setup(&mesh_transceiver, &kinect);
     
     if(activate_network) mesh_interactor.setup(&local_mesh, &remote_mesh);
+    
+    /* OSC SETUP */
+    state_sender.setup(server_ip, state_sync_port_remote);
+    state_receiver.setup(state_sync_port_local);
+    ipadSender.setup(osc_ipad_ip, osc_port_send);
+    ipadReceiver.setup(osc_port_receive);
+    
+    dmx_state.addListener(this, &testApp::stateChanged);
     
     use_easy_cam = false;
     draw_grid = false;
@@ -124,9 +135,7 @@ void testApp::setup() {
 	overlay_out_remote.loadMovie("tornado-beam_out.mov");
     overlay_out_remote.setLoopState(OF_LOOP_NONE);
     
-    /* OSC SETUP */
-    oscReceiver.setup(osc_port_receive);
-    oscSender.setup(osc_ipad_ip, osc_port_send);
+
     
     // push all settings to the ipad
     lightStateChanged = true;
@@ -270,6 +279,12 @@ void testApp::nextState(){
     if(dmx_state>5) dmx_state = 1;
     lightStateChanged = true;
     ofLog() << "entering state " << ofToString(dmx_state);
+}
+
+void testApp::stateChanged(int &state){
+    ofxOscMessage message;
+    message.setAddress("/dmx_state/" + ofToString(state));
+    state_sender.sendMessage(message);
 }
 
 //--------------------------------------------------------------
@@ -470,11 +485,25 @@ void testApp::keyPressed (int key) {
 //--------------------------------------------------------------
 void testApp::oscUpdate()
 {
+    
+    while(state_receiver.hasWaitingMessages()){
+        ofxOscMessage m;
+        state_receiver.getNextMessage(&m);
+        
+        if (m.getAddress() == "/dmx_state/0") { dmx_state = 0; }
+        else if (m.getAddress() == "/dmx_state/1") { dmx_state_remote= 1;  }
+        else if (m.getAddress() == "/dmx_state/2") { dmx_state_remote = 2; }
+        else if (m.getAddress() == "/dmx_state/3") { dmx_state_remote = 3; }
+        else if (m.getAddress() == "/dmx_state/4") { dmx_state_remote = 4; }
+        else if (m.getAddress() == "/dmx_state/5") { dmx_state_remote = 5; }
+    }
+    
+    
     // it might be a bit too heavy to send all the settings on every frame to the ipad
     
-    while(oscReceiver.hasWaitingMessages()){
+    while(ipadReceiver.hasWaitingMessages()){
         ofxOscMessage m;
-        oscReceiver.getNextMessage(&m);
+        ipadReceiver.getNextMessage(&m);
                 
         // light state
         if (m.getAddress() == "/lightState/0") { dmx_state = 0; lightStateChanged = true; }
@@ -557,153 +586,153 @@ void testApp::oscUpdateAll(){
         if(dmx_state == 0) {
             updater.clear();
             updater.setAddress("/lightState/0"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
         }
         
         if(dmx_state == 1) {
             updater.clear();
             updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/1"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
         }
         else if(dmx_state == 2) {
             updater.clear();
             updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/2"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
         }
         else if(dmx_state == 3) {
             updater.clear();
             updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/3"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
         }
         else if(dmx_state == 4) {
             updater.clear();
             updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/4"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
         }
         else if(dmx_state == 5) {
             updater.clear();
             updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
             
             updater.clear();
             updater.setAddress("/lightState/5"); updater.addFloatArg(1);
-            oscSender.sendMessage(updater);
+            ipadSender.sendMessage(updater);
         }
     }
     
@@ -711,25 +740,25 @@ void testApp::oscUpdateAll(){
     // mesh settings
     updater.clear();
     updater.setAddress("/mesh/local/scale"); updater.addFloatArg(local_mesh_scale);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
         
     // centering
     updater.clear();
     updater.setAddress("/centering/local/correction"); updater.addFloatArg(y_correction_local); updater.addFloatArg(x_correction_local);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/centering/autolocal"); updater.addFloatArg(local_autocenter);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/centering/autoremote"); updater.addFloatArg(remote_autocenter);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     // fog settings
     updater.clear();
     updater.setAddress("/fog/level"); updater.addFloatArg(fogMachine.getLevel());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/fog/state");
@@ -737,89 +766,89 @@ void testApp::oscUpdateAll(){
         updater.addFloatArg(1);
     else
         updater.addFloatArg(0);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     // color settings
     updater.clear();
     updater.setAddress("/color/local/3"); updater.addFloatArg(colorCharacter_local.r);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/color/local/2"); updater.addFloatArg(colorCharacter_local.g);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/color/local/1"); updater.addFloatArg(colorCharacter_local.b);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/color/remote/3"); updater.addFloatArg(colorCharacter_remote.r);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/color/remote/2"); updater.addFloatArg(colorCharacter_remote.g);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/color/remote/1"); updater.addFloatArg(colorCharacter_remote.b);
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     
     // lighting settings
     updater.clear();
     updater.setAddress("/spots/cloud/color/3"); updater.addFloatArg(spotCloud1.getRed());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/spots/cloud/color/2"); updater.addFloatArg(spotCloud1.getGreen());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/spots/cloud/color/1"); updater.addFloatArg(spotCloud1.getBlue());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     
     updater.clear();
     updater.setAddress("/spots/cloud/brightness"); updater.addFloatArg(spotCloud1.getStaticBrightness());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/spots/cloud/fadetime"); updater.addFloatArg(spotCloud1.getFadeTime());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     
     updater.clear();
     updater.setAddress("/led/interaction/pulse_bright_min"); updater.addFloatArg(ledRingInteraction.getPulseMin());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/led/interaction/pulse_bright_max"); updater.addFloatArg(ledRingInteraction.getPulseMax());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/led/interaction/pulse_speed"); updater.addFloatArg(ledRingInteraction.getPulseSpeed());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/led/interaction/static_brightness"); updater.addFloatArg(ledRingInteraction.getStaticBrightness());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     
     updater.clear();
     updater.setAddress("/spots/interaction/pulse/brightness/min"); updater.addFloatArg(spotInteraction1.getPulseMin());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/spots/interaction/pulse/brightness/max"); updater.addFloatArg(spotInteraction1.getPulseMax());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/spots/interaction/brightness"); updater.addFloatArg(spotInteraction1.getStaticBrightness());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
     
     updater.clear();
     updater.setAddress("/spots/interaction/fadetime"); updater.addFloatArg(spotInteraction1.getFadeTime());
-    oscSender.sendMessage(updater);
+    ipadSender.sendMessage(updater);
 }
 
 
