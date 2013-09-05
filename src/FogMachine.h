@@ -29,7 +29,7 @@ public:
 private:
     bool on = false;
     bool timer = false;
-    unsigned char level;
+    unsigned char level = 120;
     unsigned char startAddress = 1;
     float endTime;
     ofxDmx* dmx;

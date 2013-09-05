@@ -285,7 +285,6 @@ void meshMan::draw(){
 
     // draw flashes
     ofPushStyle();
-    ofSetLineWidth(flash_line_width);
     for (int i=0; i<flash_list.size(); i++)
         flash_list[i]->draw();
     ofPopStyle();
@@ -328,6 +327,7 @@ void meshMan::tryCreateFlash(const ofVec3f &start, const ofVec3f &end)
     if (i>=0) {
         flash_list[i]->create(start, end, flash_amplitude);
         flash_list[i]->setColor(beam_color);
+        flash_list[i]->setLineWidth(beam_line_width);
     }    
 }
 
@@ -357,7 +357,7 @@ void meshMan::drawBeamInOut(float fader)
     float drawTreshold = maxY - (maxY-minY) * fader;
     float flashTreshold = drawTreshold - beam_flash_vertex_range;
 
-    for (i=0; i<numVerts-10; i += (1 + beam_flash_skip_vertices))
+    for (i=0; i < numVerts; i += (1 + beam_flash_skip_vertices))
     {
         if (vertices[i].y > flashTreshold && vertices[i].y < drawTreshold)
         {

@@ -41,6 +41,8 @@ void testApp::setup() {
     interaction_parameters.add(mesh_interactor.distance.set("distance", 300, 0, 2000));
     interaction_parameters.add(mesh_interactor.resolution.set("resolution", 10, 1, 100));
     interaction_parameters.add(mesh_interactor.color.set("color", ofColor(0, 255, 0)));
+    interaction_parameters.add(mesh_interactor.line_width.set("line width", 3.0, 1.0, 10.0));
+    interaction_parameters.add(local_mesh.beam_flash_skip_vertices.set("beam vertice skip", 5, 0, 20));
     
     network_parameters.setName("network parameters");
     network_parameters.add(hide_remote.set("hide remote", false));
@@ -129,6 +131,8 @@ void testApp::setup() {
 
     kinect.setCameraTiltAngle(kinect_angle);
     
+    last_ipad_update = -100; // make sure that the ipad gets updaten on startup
+    
 }
 
 
@@ -164,7 +168,23 @@ void testApp::draw() {
         if(use_easy_cam)easyCam.begin();
         else camera.begin();
 
-        if(draw_grid) ofDrawGrid(1000);
+    if(draw_grid){
+        ofDrawGrid(1000);
+        ofPushStyle();
+        ofSetColor(255, 0, 0);
+        ofSetLineWidth(20);
+        ofLine(-250, 0, -125, -250, 0, 125);
+        ofLine(-500, 0, -125, -500, 0, 125);
+        ofLine(-250, 0, -125, -500, 0, -125);
+        ofLine(-250, 0, 125, -500, 0, 125);
+        ofSetColor(0, 255, 0);
+        ofLine(250, 0, -125, 250, 0, 125);
+        ofLine(500, 0, -125, 500, 0, 125);
+        ofLine(250, 0, -125, 500, 0, -125);
+        ofLine(250, 0, 125, 500, 0, 125);
+        
+        ofPopStyle();
+    }
         ofScale(1, -1, -1);
 
         local_mesh.draw();
@@ -412,9 +432,6 @@ void testApp::oscUpdate()
         
         // centering
         else if (m.getAddress() == "/centering/local/correction") { y_correction_local = m.getArgAsFloat(0); x_correction_local = m.getArgAsFloat(1); }
-        else if (m.getAddress() == "/centering/autolocal") { local_autocenter =  bool(m.getArgAsFloat(0)); }
-        else if (m.getAddress() == "/centering/autoremote") { remote_autocenter = bool(m.getArgAsFloat(0)); }
-        else if (m.getAddress() == "/mirror") { mirror = bool(m.getArgAsFloat(0)); }
         
         // fog settings
         else if (m.getAddress() == "/fog/level") { fogMachine.setLevel(m.getArgAsFloat(0)); }
@@ -422,10 +439,7 @@ void testApp::oscUpdate()
             if(m.getArgAsFloat(0) >= 0.9 && m.getArgAsFloat(0) <= 1.1){
                 fogMachine.fogOn();
             }
-            else if
-                (m.getArgAsFloat(0) >= 0 && m.getArgAsFloat(0) <= 0.1){
-                    fogMachine.fogOff();
-                }
+            else { fogMachine.fogOff(); }
         }
         
         // character color settings
@@ -455,31 +469,68 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/spots/cloud/color/pink") { spotCloud1.setColor(colors[5]); spotCloud2.setColor(colors[5]); }
         else if (m.getAddress() == "/spots/cloud/color/violet") { spotCloud1.setColor(colors[6]); spotCloud2.setColor(colors[6]); }
         
+        // mesh resolution
+        else if (m.getAddress() == "/mesh_resolution/x") { local_mesh.mesh_resolution_x = m.getArgAsInt32(0); }
+        else if (m.getAddress() == "/mesh_resolution/y") { local_mesh.mesh_resolution_y = m.getArgAsInt32(0); }
+        else if (m.getAddress() == "/linewidth") { line_width = m.getArgAsFloat(0); }
+        
+        // camera settings
+        else if (m.getAddress() == "/camera/offset") { camera_offset_y = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/camera/angle") { camera_angle = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/camera/fov") { fov = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/kinect/angle") { if(kinect_angle != m.getArgAsFloat(0)) {kinect_angle = m.getArgAsFloat(0); kinect.setCameraTiltAngle(kinect_angle);}}
+        
+        // britzel settings
+        else if (m.getAddress() == "/britzel/distance") { mesh_interactor.distance = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/britzel/resolution") { mesh_interactor.resolution = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/flash/linewidth") { mesh_interactor.line_width = m.getArgAsFloat(0); local_mesh.beam_line_width = m.getArgAsFloat(0); remote_mesh.beam_line_width = m.getArgAsFloat(0); }
+        
+        // mirror
+        else if (m.getAddress() == "/mirror") { local_mesh.mirror = bool(m.getArgAsFloat(0)); }
+        else if (m.getAddress() == "/grid") { draw_grid = bool(m.getArgAsFloat(0)); }
+        
+        // thresholds
+        else if (m.getAddress() == "/threshold/near") { local_mesh.near_threshold = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/threshold/far") { local_mesh.far_threshold = m.getArgAsFloat(0); }
+        
+        // debug camera
+        else if (m.getAddress() == "/debug_camera") { debug_camera = bool(m.getArgAsFloat(0)); }
+        
+        // x/y/z Position correction
+        else if (m.getAddress() == "/centering/3d/x") { ofVec3f current = local_mesh.offset; current.x = m.getArgAsFloat(0); local_mesh.offset = current; }
+        else if (m.getAddress() == "/centering/3d/y") { ofVec3f current = local_mesh.offset; current.y = m.getArgAsFloat(0); local_mesh.offset = current; }
+        else if (m.getAddress() == "/centering/3d/z") { ofVec3f current = local_mesh.offset; current.z = m.getArgAsFloat(0); local_mesh.offset = current; }
+        
+        // load/save settings
+        else if (m.getAddress() == "/settings/save") { gui.saveToFile("settings.xml"); gui3d.saveToFile("positioning.xml"); }
+        else if (m.getAddress() == "/settings/load") { gui.loadFromFile("settings.xml"); gui3d.loadFromFile("positioning.xml"); }
+        
+        // mesh mode
+        else if (m.getAddress() == "/mesh_mode/triangles") { local_mesh.mesh_mode = local_mesh.mesh_mode_triangles; }
+        else if (m.getAddress() == "/mesh_mode/quads") { local_mesh.mesh_mode = local_mesh.mesh_mode_quads; }
+        else if (m.getAddress() == "/mesh_mode/lines") { local_mesh.mesh_mode = local_mesh.mesh_mode_lines; }
+        
+        // light settings
         else if (m.getAddress() == "/spots/cloud/brightness") { spotCloud1.setStaticBrightness(m.getArgAsFloat(0)); spotCloud2.setStaticBrightness(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/spots/cloud/fadetime") { spotCloud1.setFadeTime(m.getArgAsFloat(0)); spotCloud2.setFadeTime(m.getArgAsFloat(0)); }
-
         else if (m.getAddress() == "/led/interaction/pulse_bright_min") { ledRingInteraction.setPulseMin(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/led/interaction/pulse_bright_max") { ledRingInteraction.setPulseMax(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/led/interaction/pulse_speed") { ledRingInteraction.setPulseSpeed(m.getArgAsFloat(0)); spotInteraction1.setPulseSpeed(m.getArgAsFloat(0)); spotInteraction2.setPulseSpeed(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/led/interaction/static_brightness") { ledRingInteraction.setStaticBrightness(m.getArgAsFloat(0)); }
-        
         else if (m.getAddress() == "/spots/interaction/pulse/brightness/min") { spotInteraction1.setPulseMin(m.getArgAsFloat(0)); spotInteraction2.setPulseMin(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/spots/interaction/pulse/brightness/max") { spotInteraction1.setPulseMax(m.getArgAsFloat(0)); spotInteraction2.setPulseMax(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/spots/interaction/brightness") { spotInteraction1.setStaticBrightness(m.getArgAsFloat(0)); spotInteraction2.setStaticBrightness(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/spots/interaction/fadetime") { spotInteraction1.setFadeTime(m.getArgAsFloat(0)); }
-        
-        // settings
-        else if (m.getAddress() == "/settings/save") { /* TODO: save settings */ }
-        else if (m.getAddress() == "/settings/load") { /* TODO: load settings */ }
-        else if (m.getAddress() == "/settings/updateall") { oscUpdateAll(); }
-        
-        else if (m.getAddress() == "/remote/in") { remote_mesh.beamIn(); }
-        else if (m.getAddress() == "/remote/out") { remote_mesh.beamOut(); }
-        
     }
     
+    
     // TODO: make this a bit more elegant!
-    oscUpdateAll();
+    // do not push changes to the ipad too often!
+    if(ofGetElapsedTimef() - last_ipad_update > 0.04){ // only 25 times per second
+        last_ipad_update = ofGetElapsedTimef();
+        oscUpdateAll();
+    }
+
 }
 
 void testApp::oscUpdateAll(){
@@ -513,22 +564,14 @@ void testApp::oscUpdateAll(){
     }
 
     
-    // mesh settings
+    // scale
     updater.clear();
     updater.setAddress("/mesh/local/scale"); updater.addFloatArg(local_mesh_scale);
     ipadSender.sendMessage(updater);
         
-    // centering
+    // x/y correction
     updater.clear();
     updater.setAddress("/centering/local/correction"); updater.addFloatArg(y_correction_local); updater.addFloatArg(x_correction_local);
-    ipadSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/centering/autolocal"); updater.addFloatArg(local_autocenter);
-    ipadSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/centering/autoremote"); updater.addFloatArg(remote_autocenter);
     ipadSender.sendMessage(updater);
     
     // fog settings
@@ -543,17 +586,6 @@ void testApp::oscUpdateAll(){
     else
         updater.addFloatArg(0);
     ipadSender.sendMessage(updater);
-    
-    // character color settings
-    for(int i=0; i< 7; i++){
-        updater.clear();
-        updater.setAddress("/color/characters/" + color_names[i]);
-        if(local_mesh.color == colors[i])
-            updater.addFloatArg(1);
-        else
-            updater.addFloatArg(0);
-        ipadSender.sendMessage(updater);
-    }
     
     // character color settings
     for(int i=0; i< 7; i++){
@@ -588,6 +620,138 @@ void testApp::oscUpdateAll(){
         ipadSender.sendMessage(updater);
     }
     
+    // connection led
+    updater.clear();
+    updater.setAddress("/connected");
+    if(mesh_transceiver.isConnected())
+        updater.addFloatArg(1);
+    else
+        updater.addFloatArg(0);
+    ipadSender.sendMessage(updater);
+    
+    
+    // mesh resolution
+    updater.clear();
+    updater.setAddress("/mesh_resolution/x"); updater.addIntArg(local_mesh.mesh_resolution_x);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/mesh_resolution/y"); updater.addIntArg(local_mesh.mesh_resolution_y);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/linewidth"); updater.addFloatArg(line_width);
+    ipadSender.sendMessage(updater);
+    
+    
+    // camera settings
+    updater.clear();
+    updater.setAddress("/camera/offset"); updater.addFloatArg(camera_offset_y);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/camera/angle"); updater.addFloatArg(camera_angle);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/camera/fov"); updater.addFloatArg(fov);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/kinect/angle"); updater.addFloatArg(kinect_angle);
+    ipadSender.sendMessage(updater);
+    
+    
+    // britzel settings
+    updater.clear();
+    updater.setAddress("/britzel/distance"); updater.addFloatArg(mesh_interactor.distance);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/britzel/resolution"); updater.addFloatArg(mesh_interactor.resolution);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/flash/linewidth"); updater.addFloatArg(mesh_interactor.line_width);
+    ipadSender.sendMessage(updater);
+
+    
+    // mirror
+    updater.clear();
+    updater.setAddress("/mirror");
+    if(local_mesh.mirror)
+        updater.addFloatArg(1);
+    else
+        updater.addFloatArg(0);
+    ipadSender.sendMessage(updater);
+    
+    // grid
+    updater.clear();
+    updater.setAddress("/grid");
+    if(draw_grid)
+        updater.addFloatArg(1);
+    else
+        updater.addFloatArg(0);
+    ipadSender.sendMessage(updater);
+    
+    // thresholds
+    updater.clear();
+    updater.setAddress("/threshold/near"); updater.addFloatArg(local_mesh.near_threshold);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/threshold/far"); updater.addFloatArg(local_mesh.far_threshold);
+    ipadSender.sendMessage(updater);
+    
+    // debug camera
+    updater.clear();
+    updater.setAddress("/debug_camera");
+    if(debug_camera)
+        updater.addFloatArg(1);
+    else
+        updater.addFloatArg(0);
+    ipadSender.sendMessage(updater);
+    
+    // x/y/z Position correction
+    ofVec3f current_offset = local_mesh.offset;
+    
+    updater.clear();
+    updater.setAddress("/centering/3d/x"); updater.addFloatArg(current_offset.x);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/centering/3d/y"); updater.addFloatArg(current_offset.y);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/centering/3d/z"); updater.addFloatArg(current_offset.z);
+    ipadSender.sendMessage(updater);
+    
+    // mesh mode
+    updater.clear();
+    updater.setAddress("/mesh_mode/triangles");
+    if(local_mesh.mesh_mode == local_mesh.mesh_mode_triangles)
+        updater.addFloatArg(1);
+    else
+        updater.addFloatArg(0);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/mesh_mode/quads");
+    if(local_mesh.mesh_mode == local_mesh.mesh_mode_quads)
+        updater.addFloatArg(1);
+    else
+        updater.addFloatArg(0);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/mesh_mode/lines");
+    if(local_mesh.mesh_mode == local_mesh.mesh_mode_lines)
+        updater.addFloatArg(1);
+    else
+        updater.addFloatArg(0);
+    ipadSender.sendMessage(updater);  
+
     
     // lighting settings
     updater.clear();

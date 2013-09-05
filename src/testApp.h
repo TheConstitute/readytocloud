@@ -28,7 +28,7 @@ class testApp : public ofBaseApp{
         void refreshRemoteMesh(int user);
     
         // event listeners
-        void stateChanged(int &state);
+        void stateChanged(int &state);    
     
         // INITIALIZATION & UPDATER
         void oscUpdate();
@@ -128,10 +128,7 @@ class testApp : public ofBaseApp{
     
     bool draw_local_mesh = true;
     bool draw_remote_mesh = true;
-    
-    bool mirror = true;
-
-    
+        
     ofFbo fboLocal;
     
     int alpha_local = 255;
@@ -146,6 +143,7 @@ class testApp : public ofBaseApp{
     float fadeStartTime_remote = 0;
     
     bool draw_debug = false;
+    bool debug_camera = false;
     
     meshMan local_mesh;
     meshMan remote_mesh;
@@ -155,5 +153,7 @@ class testApp : public ofBaseApp{
 
     ofColor colors[7] = { ofColor(255, 255, 255), ofColor(255,0,0), ofColor(0,255,0), ofColor(0,133,255), ofColor(255,255,50), ofColor(255,0,130), ofColor(180,0, 255) };
     string color_names[7] = {"white", "red", "green", "blue", "yellow", "pink", "violet"};
+    
+    float last_ipad_update;
     
 };

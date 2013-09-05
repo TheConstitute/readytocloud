@@ -49,7 +49,13 @@ public:
     bool isFrameNew(){return frame_new;}
     
     ofColor color;
+    
+    // beam parameters
     ofColor beam_color;
+    ofParameter<float> beam_line_width;
+    ofParameter<int> beam_flash_skip_vertices = 5;
+    
+   enum mesh_modes {mesh_mode_triangles, mesh_mode_quads, mesh_mode_lines, mesh_mode_points, mesh_mode_cross_lines};
     
 private:
     
@@ -71,7 +77,7 @@ private:
     bool frame_new;
     
     enum modes{ mode_kinect, mode_network} mode;
-    enum mesh_modes {mesh_mode_triangles, mesh_mode_quads, mesh_mode_lines, mesh_mode_points, mesh_mode_cross_lines};
+
     enum beam_states {beaming_in, beamed_in, beaming_out, beamed_out} beam_state;
     
     //opencv stuff
@@ -83,8 +89,7 @@ private:
     float fader = 0;
     const int max_flashes = 200;
     const float flash_amplitude = 300.0f;
-    const float flash_line_width = 2.0f;
-    const int beam_flash_skip_vertices = 10;
+    
     const float beam_flash_vertex_range = 10.0f;
     vector<meshFlash *> flash_list;
 };

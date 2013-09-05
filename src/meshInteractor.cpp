@@ -35,10 +35,9 @@ void meshInteractor::update(){
 void meshInteractor::draw(){
     // draw flashes
     ofPushStyle();
-    ofSetLineWidth(line_width);
-    for (int i=0; i<flash_list.size(); i++){
-        flash_list[i]->draw();
-    }
+        for (int i=0; i<flash_list.size(); i++){
+            flash_list[i]->draw();
+        }
     
     ofPopStyle();
 
@@ -65,5 +64,6 @@ void meshInteractor::tryCreateFlash(const ofVec3f &start, const ofVec3f &end)
     if (i>=0) {
         flash_list[i]->create(start, end, 300.0f);
         flash_list[i]->setColor(color);
+        flash_list[i]->setLineWidth(line_width);
     }
 }

@@ -31,11 +31,15 @@ public:
         return is_active;
     }
     
+    void setLineWidth(float width){ line_width = width; }
+    
 private:
 
     void getPerpendicular(const ofVec3f &vec, ofVec3f &pv);
     
     const int iterations = 6;
+    
+    float line_width = 2.0f;
     
     float creationTime;
     

@@ -111,6 +111,7 @@ void meshFlash::draw(void)
     }
     
     ofPushStyle();
+        ofSetLineWidth(line_width);
         ofSetColor(flash_color, (int)(timeToLive * 255.0f / live_time));
         mesh.drawWireframe();
     ofPopStyle();    
