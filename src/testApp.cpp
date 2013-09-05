@@ -36,7 +36,7 @@ void testApp::setup() {
     local_mesh_parameters.add(x_correction_local.set("x correction local", 0, -1000, 1000));
     local_mesh_parameters.add(y_correction_local.set("y correction local", 0, -1000, 1000));
     local_mesh_parameters.add(local_mesh.mirror.set("mirror", false));
-
+    
     interaction_parameters.setName("interaction parameters");
     interaction_parameters.add(mesh_interactor.distance.set("distance", 300, 0, 2000));
     interaction_parameters.add(mesh_interactor.resolution.set("resolution", 10, 1, 100));
@@ -102,14 +102,12 @@ void testApp::setup() {
     spotCloud1.setBrightness(255);
     dmxUpdate();
     
-    if(activate_network){
-        mesh_transceiver.setup(local_port, server_ip, remote_port);
-        remote_mesh.setup(&mesh_transceiver);
-    }
+    mesh_transceiver.setup(local_port, server_ip, remote_port);
+    remote_mesh.setup(&mesh_transceiver);
     
     local_mesh.setup(&mesh_transceiver, &kinect);
     
-    if(activate_network) mesh_interactor.setup(&local_mesh, &remote_mesh);
+    mesh_interactor.setup(&local_mesh, &remote_mesh);
     
     /* OSC SETUP */
     state_sender.setup(server_ip, state_sync_port_remote);
@@ -123,10 +121,9 @@ void testApp::setup() {
     draw_grid = false;
     
     // push all settings to the ipad
-    lightStateChanged = true;
     oscUpdateAll();
 
-    ofHideCursor();
+//    ofHideCursor();
     
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
 
@@ -149,7 +146,6 @@ void testApp::update() {
     oscUpdate();
     
     /* update DMX */
-    updateScene();
     dmxUpdate();
 }
 
@@ -161,7 +157,6 @@ void testApp::draw() {
     fboLocal.begin();
         ofPushStyle();
         ofClear(0, 0, 0, 0);
-        ofSetColor(colorCharacter_local);
 
         camera.setGlobalPosition(0, camera_offset_y, local_mesh_scale);
         camera.setFov(fov);
@@ -212,94 +207,99 @@ void testApp::draw() {
 void testApp::nextState(){
     dmx_state++;
     if(dmx_state>5) dmx_state = 1;
-    lightStateChanged = true;
     ofLog() << "entering state " << ofToString(dmx_state);
 }
 
 //--------------------------------------------------------------
 void testApp::stateChanged(int &state){
+    // inform the other installation about this change
     ofxOscMessage message;
     message.setAddress("/dmx_state/" + ofToString(state));
     state_sender.sendMessage(message);
-    if(state == 1)
-        local_mesh.beamOut();
-    else if (state == 2)
-        local_mesh.beamIn();
+        
+    // update the scene with the changes
+    updateScene();
+    
 }
 
 //--------------------------------------------------------------
-void testApp::updateScene(){
-    if(lightStateChanged){
-        lightStateChanged = false;
-        
-        switch(dmx_state){
-            // blackout mode
-            case 0:
-                spotInteraction1.stopPulse();
-                spotInteraction2.stopPulse();
-                spotInteraction1.fadeOut();
-                spotInteraction2.fadeOut();
-                ledRingInteraction.stopPulse(); 
-                ledRingInteraction.fadeOut();
-                spotCloud1.stopPulse();
-                spotCloud2.stopPulse();
-                spotCloud1.fadeOut();
-                spotCloud2.fadeOut();
-                break;
-            case 1:
-                spotInteraction1.stopPulse();
-                spotInteraction2.stopPulse();
-                spotInteraction1.fadeOut();
-                spotInteraction2.fadeOut();
-                spotCloud1.stopPulse();
-                spotCloud2.stopPulse();
-                spotCloud1.fadeOut();
-                spotCloud2.fadeOut();
-                ledRingInteraction.pulseBrightness();
-                break;
-            case 2:
-                ledRingInteraction.pulseBrightness();
-                spotInteraction1.pulseBrightness();
-                spotInteraction2.pulseBrightness();
-                spotCloud1.stopPulse();
-                spotCloud2.stopPulse();
-                spotCloud1.fadeOut();
-                spotCloud2.fadeOut();
-                break;
-            case 3: // fog start
-                ledRingInteraction.stopPulse();
-                ledRingInteraction.fadeIn();
-                spotInteraction1.stopPulse();
-                spotInteraction2.stopPulse();
-                spotInteraction1.fadeIn();
-                spotInteraction2.fadeIn();
-                fogMachine.fogOn();
-                spotCloud1.fadeIn();
-                spotCloud2.fadeIn();
-                break;
-            case 4: // beam in
-                fogMachine.fogOff();
-                local_mesh.beamIn();
-                
-                // shut down cloud and interaction spots
-                spotInteraction1.fadeOut();
-                spotInteraction2.fadeOut();
-                spotCloud1.fadeOut();
-                spotCloud2.fadeOut();
-                break;
-            case 5:
-                remote_mesh.beamIn();
-            case 6: // beam out
-                remote_mesh.beamOut();
-                local_mesh.beamOut();
-                
-                spotInteraction1.fadeIn();
-                spotInteraction2.fadeIn();
-                break;
-        }
-        
-        ofLog() << "switched light state to " << dmx_state;
+void testApp::updateScene(){        
+    switch(dmx_state){
+        // blackout mode
+        case 0:
+            spotInteraction1.stopPulse();
+            spotInteraction2.stopPulse();
+            spotInteraction1.fadeOut();
+            spotInteraction2.fadeOut();
+            ledRingInteraction.stopPulse(); 
+            ledRingInteraction.fadeOut();
+            spotCloud1.stopPulse();
+            spotCloud2.stopPulse();
+            spotCloud1.fadeOut();
+            spotCloud2.fadeOut();
+            local_mesh.beamOut();
+            remote_mesh.beamOut();
+            break;
+        case 1:
+            spotInteraction1.stopPulse();
+            spotInteraction2.stopPulse();
+            spotInteraction1.fadeOut();
+            spotInteraction2.fadeOut();
+            spotCloud1.stopPulse();
+            spotCloud2.stopPulse();
+            spotCloud1.fadeOut();
+            spotCloud2.fadeOut();
+            ledRingInteraction.pulseBrightness();
+            local_mesh.beamOut();
+            remote_mesh.beamOut();
+            break;
+        case 2:
+            ledRingInteraction.pulseBrightness();
+            spotInteraction1.pulseBrightness();
+            spotInteraction2.pulseBrightness();
+            spotCloud1.stopPulse();
+            spotCloud2.stopPulse();
+            spotCloud1.fadeOut();
+            spotCloud2.fadeOut();
+            local_mesh.beamOut();
+            remote_mesh.beamOut();
+            break;
+        case 3: // fog start
+            ledRingInteraction.stopPulse();
+            ledRingInteraction.fadeIn();
+            spotInteraction1.stopPulse();
+            spotInteraction2.stopPulse();
+            spotInteraction1.fadeIn();
+            spotInteraction2.fadeIn();
+            fogMachine.fogOn();
+            spotCloud1.fadeIn();
+            spotCloud2.fadeIn();
+            local_mesh.beamOut();
+            remote_mesh.beamOut();
+            break;
+        case 4: // beam in local
+            fogMachine.fogOff();
+            local_mesh.beamIn();
+            
+            // shut down cloud and interaction spots
+            spotInteraction1.fadeOut();
+            spotInteraction2.fadeOut();
+            spotCloud1.fadeOut();
+            spotCloud2.fadeOut();
+            break;
+        case 5: // beam in remote
+            remote_mesh.beamIn();
+            break;
+        case 6: // beam out
+            remote_mesh.beamOut();
+            local_mesh.beamOut();
+            
+            spotInteraction1.fadeIn();
+            spotInteraction2.fadeIn();
+            break;
     }
+    
+    ofLog() << "switched light state to " << dmx_state;
 }
 
 //--------------------------------------------------------------
@@ -379,39 +379,36 @@ void testApp::keyPressed (int key) {
 //--------------------------------------------------------------
 void testApp::oscUpdate()
 {
-    
+    // see if there are state updates from the other installation
     while(state_receiver.hasWaitingMessages()){
         ofxOscMessage m;
         state_receiver.getNextMessage(&m);
         
-        if (m.getAddress() == "/dmx_state/0") { dmx_state = 0; }
-        else if (m.getAddress() == "/dmx_state/1") { dmx_state_remote= 1;  }
-        else if (m.getAddress() == "/dmx_state/2") { dmx_state_remote = 2; }
-        else if (m.getAddress() == "/dmx_state/3") { dmx_state_remote = 3; }
-        else if (m.getAddress() == "/dmx_state/4") { dmx_state_remote = 4; }
-        else if (m.getAddress() == "/dmx_state/5") { dmx_state_remote = 5; }
-        else if (m.getAddress() == "/dmx_state/6") { dmx_state_remote = 6; remote_mesh.beamOut(); }
+        if      (m.getAddress() == "/dmx_state_remote/0") { dmx_state_remote = 0; }
+        else if (m.getAddress() == "/dmx_state_remote/1") { dmx_state_remote = 1; }
+        else if (m.getAddress() == "/dmx_state_remote/2") { dmx_state_remote = 2; }
+        else if (m.getAddress() == "/dmx_state_remote/3") { dmx_state_remote = 3; }
+        else if (m.getAddress() == "/dmx_state_remote/4") { dmx_state_remote = 4; }
+        else if (m.getAddress() == "/dmx_state_remote/5") { dmx_state_remote = 5; }
+        else if (m.getAddress() == "/dmx_state_remote/6") { dmx_state_remote = 6; }
     }
     
-    
-    // it might be a bit too heavy to send all the settings on every frame to the ipad
-    
+    // now work through the messages from the ipad and update the parameters
     while(ipadReceiver.hasWaitingMessages()){
         ofxOscMessage m;
         ipadReceiver.getNextMessage(&m);
                 
         // light state
-        if (m.getAddress() == "/lightState/0") { dmx_state = 0; lightStateChanged = true; }
-        else if (m.getAddress() == "/lightState/1") { dmx_state = 1; lightStateChanged = true; }
-        else if (m.getAddress() == "/lightState/2") { dmx_state = 2; lightStateChanged = true; }
-        else if (m.getAddress() == "/lightState/3") { dmx_state = 3; lightStateChanged = true; }
-        else if (m.getAddress() == "/lightState/4") { dmx_state = 4; lightStateChanged = true; }
-        else if (m.getAddress() == "/lightState/5") { dmx_state = 5; lightStateChanged = true; }
-        else if (m.getAddress() == "/lightState/6") { dmx_state = 6; lightStateChanged = true; }
+        if      (m.getAddress() == "/dmx_state/0") { dmx_state = 0; }
+        else if (m.getAddress() == "/dmx_state/1") { dmx_state = 1; }
+        else if (m.getAddress() == "/dmx_state/2") { dmx_state = 2; }
+        else if (m.getAddress() == "/dmx_state/3") { dmx_state = 3; }
+        else if (m.getAddress() == "/dmx_state/4") { dmx_state = 4; }
+        else if (m.getAddress() == "/dmx_state/5") { dmx_state = 5; }
+        else if (m.getAddress() == "/dmx_state/6") { dmx_state = 6; }
         
         // mesh settings
         else if (m.getAddress() == "/mesh/local/scale") { local_mesh_scale = m.getArgAsFloat(0); }
-
         
         // centering
         else if (m.getAddress() == "/centering/local/correction") { y_correction_local = m.getArgAsFloat(0); x_correction_local = m.getArgAsFloat(1); }
@@ -431,19 +428,32 @@ void testApp::oscUpdate()
                 }
         }
         
-        // color settings
-        else if (m.getAddress() == "/color/local/3") { colorCharacter_local.r = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/color/local/2") { colorCharacter_local.g = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/color/local/1") { colorCharacter_local.b = m.getArgAsFloat(0); }
+        // character color settings
+        else if (m.getAddress() == "/color/characters/white") { local_mesh.color = colors[0]; }
+        else if (m.getAddress() == "/color/characters/red") { local_mesh.color = colors[1]; }
+        else if (m.getAddress() == "/color/characters/green") { local_mesh.color = colors[2]; }
+        else if (m.getAddress() == "/color/characters/blue") { local_mesh.color = colors[3]; }
+        else if (m.getAddress() == "/color/characters/yellow") { local_mesh.color = colors[4]; }
+        else if (m.getAddress() == "/color/characters/pink") { local_mesh.color = colors[5]; }
+        else if (m.getAddress() == "/color/characters/violet") { local_mesh.color = colors[6]; }
         
-        else if (m.getAddress() == "/color/remote/3") { colorCharacter_remote.r = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/color/remote/2") { colorCharacter_remote.g = m.getArgAsFloat(0); }
-        else if (m.getAddress() == "/color/remote/1") { colorCharacter_remote.b = m.getArgAsFloat(0); }
+        // britzel color settings
+        else if (m.getAddress() == "/color/britzel/white") { local_mesh.beam_color = colors[0]; remote_mesh.beam_color = colors[0]; mesh_interactor.color = colors[0]; }
+        else if (m.getAddress() == "/color/britzel/red") { local_mesh.beam_color = colors[1]; remote_mesh.beam_color = colors[1]; mesh_interactor.color = colors[1]; }
+        else if (m.getAddress() == "/color/britzel/green") { local_mesh.beam_color = colors[2]; remote_mesh.beam_color = colors[2]; mesh_interactor.color = colors[2]; }
+        else if (m.getAddress() == "/color/britzel/blue") { local_mesh.beam_color = colors[3]; remote_mesh.beam_color = colors[3]; mesh_interactor.color = colors[3]; }
+        else if (m.getAddress() == "/color/britzel/yellow") { local_mesh.beam_color = colors[4]; remote_mesh.beam_color = colors[4]; mesh_interactor.color = colors[4]; }
+        else if (m.getAddress() == "/color/britzel/pink") { local_mesh.beam_color = colors[5]; remote_mesh.beam_color = colors[5]; mesh_interactor.color = colors[5]; }
+        else if (m.getAddress() == "/color/britzel/violet") { local_mesh.beam_color = colors[6]; remote_mesh.beam_color = colors[6]; mesh_interactor.color = colors[6]; }
         
-        // lighting settings
-        else if (m.getAddress() == "/spots/cloud/color/3") { spotCloud1.setRed(m.getArgAsFloat(0)); spotCloud2.setRed(m.getArgAsFloat(0)); }
-        else if (m.getAddress() == "/spots/cloud/color/2") { spotCloud1.setGreen(m.getArgAsFloat(0)); spotCloud2.setGreen(m.getArgAsFloat(0)); }
-        else if (m.getAddress() == "/spots/cloud/color/1") { spotCloud1.setBlue(m.getArgAsFloat(0)); spotCloud2.setBlue(m.getArgAsFloat(0)); }
+        // cloud color settings
+        else if (m.getAddress() == "/spots/cloud/color/white") { spotCloud1.setColor(colors[0]); spotCloud2.setColor(colors[0]); }
+        else if (m.getAddress() == "/spots/cloud/color/red") { spotCloud1.setColor(colors[1]); spotCloud2.setColor(colors[1]); }
+        else if (m.getAddress() == "/spots/cloud/color/green") { spotCloud1.setColor(colors[2]); spotCloud2.setColor(colors[2]); }
+        else if (m.getAddress() == "/spots/cloud/color/blue") { spotCloud1.setColor(colors[3]); spotCloud2.setColor(colors[3]); }
+        else if (m.getAddress() == "/spots/cloud/color/yellow") { spotCloud1.setColor(colors[4]); spotCloud2.setColor(colors[4]); }
+        else if (m.getAddress() == "/spots/cloud/color/pink") { spotCloud1.setColor(colors[5]); spotCloud2.setColor(colors[5]); }
+        else if (m.getAddress() == "/spots/cloud/color/violet") { spotCloud1.setColor(colors[6]); spotCloud2.setColor(colors[6]); }
         
         else if (m.getAddress() == "/spots/cloud/brightness") { spotCloud1.setStaticBrightness(m.getArgAsFloat(0)); spotCloud2.setStaticBrightness(m.getArgAsFloat(0)); }
         else if (m.getAddress() == "/spots/cloud/fadetime") { spotCloud1.setFadeTime(m.getArgAsFloat(0)); spotCloud2.setFadeTime(m.getArgAsFloat(0)); }
@@ -476,162 +486,32 @@ void testApp::oscUpdateAll(){
     /* update the interface on the ipad */
     ofxOscMessage updater;
     
-    if(lightStateChanged){
-    // light states
-    //lightStateChanged = false;
-        if(dmx_state == 0) {
-            updater.clear();
-            updater.setAddress("/lightState/0"); updater.addFloatArg(1);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-        }
+    // update local states
+    for(int i= 0; i < 7; i++)
+    {
+        updater.clear();
+        updater.setAddress("/dmx_state/" + ofToString(i));
+        if(dmx_state == i)
+            updater.addFloatArg(1);
+        else
+            updater.addFloatArg(0);
         
-        if(dmx_state == 1) {
-            updater.clear();
-            updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/1"); updater.addFloatArg(1);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-        }
-        else if(dmx_state == 2) {
-            updater.clear();
-            updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/2"); updater.addFloatArg(1);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-        }
-        else if(dmx_state == 3) {
-            updater.clear();
-            updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/3"); updater.addFloatArg(1);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-        }
-        else if(dmx_state == 4) {
-            updater.clear();
-            updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/4"); updater.addFloatArg(1);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/5"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-        }
-        else if(dmx_state == 5) {
-            updater.clear();
-            updater.setAddress("/lightState/0"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/1"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/2"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/3"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/4"); updater.addFloatArg(0);
-            ipadSender.sendMessage(updater);
-            
-            updater.clear();
-            updater.setAddress("/lightState/5"); updater.addFloatArg(1);
-            ipadSender.sendMessage(updater);
-        }
+        ipadSender.sendMessage(updater);
     }
-    
+
+    // update remote states
+    for(int i= 0; i < 7; i++)
+    {
+        updater.clear();
+        updater.setAddress("/dmx_state_remote/" + ofToString(i));
+        if(dmx_state_remote == i)
+            updater.addFloatArg(1);
+        else
+            updater.addFloatArg(0);
+        
+        ipadSender.sendMessage(updater);
+    }
+
     
     // mesh settings
     updater.clear();
@@ -664,30 +544,49 @@ void testApp::oscUpdateAll(){
         updater.addFloatArg(0);
     ipadSender.sendMessage(updater);
     
-    // color settings
-    updater.clear();
-    updater.setAddress("/color/local/3"); updater.addFloatArg(colorCharacter_local.r);
-    ipadSender.sendMessage(updater);
+    // character color settings
+    for(int i=0; i< 7; i++){
+        updater.clear();
+        updater.setAddress("/color/characters/" + color_names[i]);
+        if(local_mesh.color == colors[i])
+            updater.addFloatArg(1);
+        else
+            updater.addFloatArg(0);
+        ipadSender.sendMessage(updater);
+    }
     
-    updater.clear();
-    updater.setAddress("/color/local/2"); updater.addFloatArg(colorCharacter_local.g);
-    ipadSender.sendMessage(updater);
+    // character color settings
+    for(int i=0; i< 7; i++){
+        updater.clear();
+        updater.setAddress("/color/characters/" + color_names[i]);
+        if(local_mesh.color == colors[i])
+            updater.addFloatArg(1);
+        else
+            updater.addFloatArg(0);
+        ipadSender.sendMessage(updater);
+    }
     
-    updater.clear();
-    updater.setAddress("/color/local/1"); updater.addFloatArg(colorCharacter_local.b);
-    ipadSender.sendMessage(updater);
+    // britzel color settings
+    for(int i=0; i< 7; i++){
+        updater.clear();
+        updater.setAddress("/color/britzel/" + color_names[i]);
+        if(local_mesh.beam_color == colors[i])
+            updater.addFloatArg(1);
+        else
+            updater.addFloatArg(0);
+        ipadSender.sendMessage(updater);
+    }
     
-    updater.clear();
-    updater.setAddress("/color/remote/3"); updater.addFloatArg(colorCharacter_remote.r);
-    ipadSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/color/remote/2"); updater.addFloatArg(colorCharacter_remote.g);
-    ipadSender.sendMessage(updater);
-    
-    updater.clear();
-    updater.setAddress("/color/remote/1"); updater.addFloatArg(colorCharacter_remote.b);
-    ipadSender.sendMessage(updater);
+    // cloud color settings
+    for(int i=0; i< 7; i++){
+        updater.clear();
+        updater.setAddress("/spots/cloud/color/" + color_names[i]);
+        if(spotCloud1.getColor() == colors[i])
+            updater.addFloatArg(1);
+        else
+            updater.addFloatArg(0);
+        ipadSender.sendMessage(updater);
+    }
     
     
     // lighting settings

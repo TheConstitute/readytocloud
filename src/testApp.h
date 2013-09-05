@@ -10,6 +10,7 @@
 #include "ofxGui.h"
 #include "meshMan.h"
 #include "meshInteractor.h"
+#include "ofxOscParameterSync.h"
 
 class testApp : public ofBaseApp{
 
@@ -152,6 +153,7 @@ class testApp : public ofBaseApp{
     meshTransceiver mesh_transceiver;
     meshInteractor mesh_interactor;
 
-    
+    ofColor colors[7] = { ofColor(255, 255, 255), ofColor(255,0,0), ofColor(0,255,0), ofColor(0,133,255), ofColor(255,255,50), ofColor(255,0,130), ofColor(180,0, 255) };
+    string color_names[7] = {"white", "red", "green", "blue", "yellow", "pink", "violet"};
     
 };

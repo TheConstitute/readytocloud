@@ -21,6 +21,8 @@ meshMan::meshMan(){
     
     draw_contour = false;
     
+    color = ofColor(255, 255, 255);
+    
     mesh_mode = mesh_mode_lines;
     
     grayImage.allocate(kinect->width, kinect->height);
@@ -256,9 +258,11 @@ void meshMan::updateFromNetwork(){
 
 //--------------------------------------------------------------
 void meshMan::draw(){
+    ofPushStyle();
+    ofSetColor(color);
+    
     switch(beam_state){
         case beaming_in:
-            hide = false;
             drawBeamInOut(fader);
             fader += 0.01f;
             if (fader >= 1.0f) beam_state = beamed_in;
@@ -276,6 +280,8 @@ void meshMan::draw(){
             // draw nothing
             break;
     }
+    
+    ofPopStyle();
 
     // draw flashes
     ofPushStyle();
@@ -287,7 +293,7 @@ void meshMan::draw(){
 
 //--------------------------------------------------------------
 void meshMan::beamIn(){
-    if(beam_state != beaming_in || beamed_in){
+    if(beam_state == beamed_out){
         beam_state = beaming_in;
         fader = 0;
     }
@@ -295,7 +301,7 @@ void meshMan::beamIn(){
 
 //--------------------------------------------------------------
 void meshMan::beamOut(){
-    if(beam_state != beaming_out || beamed_out){
+    if(beam_state == beamed_in){
         beam_state = beaming_out;
         fader = 1;
     }
@@ -321,6 +327,7 @@ void meshMan::tryCreateFlash(const ofVec3f &start, const ofVec3f &end)
     
     if (i>=0) {
         flash_list[i]->create(start, end, flash_amplitude);
+        flash_list[i]->setColor(beam_color);
     }    
 }
 

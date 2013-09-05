@@ -48,6 +48,9 @@ public:
     
     bool isFrameNew(){return frame_new;}
     
+    ofColor color;
+    ofColor beam_color;
+    
 private:
     
     void updateFromKinect();
@@ -58,7 +61,6 @@ private:
     void beamFlash(const ofVec3f &vertex);
     
     ofMesh mesh, temp_mesh;
-    ofColor color;
     
     meshTransceiver* transceiver;
     ofxKinect* kinect;
@@ -78,10 +80,7 @@ private:
     ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
     ofxCvContourFinder contourFinder;
     
-
-    
     float fader = 0;
-    bool hide = false;
     const int max_flashes = 200;
     const float flash_amplitude = 300.0f;
     const float flash_line_width = 2.0f;
