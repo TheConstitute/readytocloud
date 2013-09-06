@@ -20,6 +20,8 @@ public:
     void update();
     void draw();
     
+    ofSoundPlayer  britzel_sound;
+    
     ofParameter<int> resolution;
     ofParameter<ofColor> color;
     ofParameter<float> distance;
