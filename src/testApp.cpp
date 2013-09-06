@@ -126,7 +126,7 @@ void testApp::setup() {
     // push all settings to the ipad
     oscUpdateAll();
 
-//    ofHideCursor();
+    ofHideCursor();
     
     fboLocal.allocate(ofGetWidth(), ofGetHeight());
 
@@ -169,7 +169,7 @@ void testApp::draw() {
         if(use_easy_cam)easyCam.begin();
         else camera.begin();
 
-    if(draw_grid){
+    if(draw_grid){        
         ofDrawGrid(1000);
         ofPushStyle();
         ofSetColor(255, 0, 0);
@@ -369,6 +369,10 @@ void testApp::keyPressed (int key) {
             break;
         case 'h':
             draw_gui = !draw_gui;
+            if(draw_gui)
+                ofShowCursor();
+            else if (!draw_gui3d)
+                ofHideCursor();
             break;
         case 'c':
             use_easy_cam = !use_easy_cam;
@@ -378,6 +382,10 @@ void testApp::keyPressed (int key) {
             break;
         case 'p':
             draw_gui3d = !draw_gui3d;
+            if(draw_gui3d)
+                ofShowCursor();
+            else if (!draw_gui)
+                ofHideCursor();
             break;
         case OF_KEY_UP:
 			kinect_angle++;
