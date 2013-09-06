@@ -24,6 +24,7 @@ public:
     ofParameter<ofColor> color;
     ofParameter<float> distance;
     ofParameter<float> line_width;
+    ofParameter<float> amplitude;
     
 private:
     void tryCreateFlash(const ofVec3f &start, const ofVec3f &end);

@@ -62,7 +62,7 @@ void meshInteractor::tryCreateFlash(const ofVec3f &start, const ofVec3f &end)
     }
     
     if (i>=0) {
-        flash_list[i]->create(start, end, 300.0f);
+        flash_list[i]->create(start, end, amplitude);
         flash_list[i]->setColor(color);
         flash_list[i]->setLineWidth(line_width);
     }

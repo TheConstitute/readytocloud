@@ -42,6 +42,7 @@ void testApp::setup() {
     interaction_parameters.add(mesh_interactor.resolution.set("resolution", 10, 1, 100));
     interaction_parameters.add(mesh_interactor.color.set("color", ofColor(0, 255, 0)));
     interaction_parameters.add(mesh_interactor.line_width.set("line width", 3.0, 1.0, 10.0));
+    interaction_parameters.add(mesh_interactor.amplitude.set("amplitude", 100.0f, 1.0f, 500.0f));
     interaction_parameters.add(local_mesh.beam_flash_skip_vertices.set("beam vertice skip", 5, 0, 20));
     
     network_parameters.setName("network parameters");
@@ -481,6 +482,7 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/britzel/distance") { mesh_interactor.distance = m.getArgAsFloat(0); }
         else if (m.getAddress() == "/britzel/resolution") { mesh_interactor.resolution = m.getArgAsFloat(0); }
         else if (m.getAddress() == "/flash/linewidth") { mesh_interactor.line_width = m.getArgAsFloat(0); local_mesh.beam_line_width = m.getArgAsFloat(0); remote_mesh.beam_line_width = m.getArgAsFloat(0); }
+        else if (m.getAddress() == "/britzel/amplitude") { mesh_interactor.amplitude = m.getArgAsFloat(0); }
         
         // mirror
         else if (m.getAddress() == "/mirror") { local_mesh.mirror = bool(m.getArgAsFloat(0)); }
@@ -670,6 +672,10 @@ void testApp::oscUpdateAll(){
     
     updater.clear();
     updater.setAddress("/flash/linewidth"); updater.addFloatArg(mesh_interactor.line_width);
+    ipadSender.sendMessage(updater);
+    
+    updater.clear();
+    updater.setAddress("/britzel/amplitude"); updater.addFloatArg(mesh_interactor.amplitude);
     ipadSender.sendMessage(updater);
 
     
