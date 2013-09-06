@@ -298,7 +298,7 @@ void testApp::updateScene(){
             remote_mesh.beamOut();
             break;
         case 4: // beam in local
-            fogMachine.fogOff();
+//            fogMachine.fogOff();
             local_mesh.beamIn();
             
             // shut down cloud and interaction spots
@@ -313,9 +313,6 @@ void testApp::updateScene(){
         case 6: // beam out
             remote_mesh.beamOut();
             local_mesh.beamOut();
-            
-            spotInteraction1.fadeIn();
-            spotInteraction2.fadeIn();
             break;
     }
     
