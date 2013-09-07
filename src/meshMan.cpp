@@ -73,7 +73,7 @@ void meshMan::updateFromKinect(){
         int h = 480;
         mesh.clear();
 
-        frame_new = true;
+        frame_new = true;   // flag that we have made a change to the mesh => this is needed to know that the mesh interactor has to be updated
 
         if(mesh_mode == mesh_mode_triangles){
             mesh.setMode(OF_PRIMITIVE_TRIANGLES); 
@@ -226,6 +226,10 @@ void meshMan::updateFromNetwork(){
         mesh = ofMesh(temp_mesh);
         frame_new = true; // flag that we have made a change to the mesh => this is needed to know that the mesh interactor has to be updated
     }
+
+    // clear the mesh again if the user is beamed out. the reason for generating the mesh in this state is that the network buffer does not overflow.
+    if(beam_state == beamed_out)
+        mesh.clear();
 }
 
 //--------------------------------------------------------------
