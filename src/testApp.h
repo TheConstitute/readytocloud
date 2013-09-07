@@ -64,7 +64,6 @@ class testApp : public ofBaseApp{
     
     /* NETWORK PARAMETERS */
     ofParameterGroup network_parameters;
-    ofParameter<bool> activate_network;
     ofParameter<string> server_ip;
     ofParameter<int> local_port, remote_port;
     ofParameter<string> remote_ip;

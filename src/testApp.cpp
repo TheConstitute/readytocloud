@@ -47,7 +47,6 @@ void testApp::setup() {
     
     network_parameters.setName("network parameters");
     network_parameters.add(hide_remote.set("hide remote", false));
-    network_parameters.add(activate_network.set("activate network", true));
     network_parameters.add(local_port.set("local port", 7000));
     network_parameters.add(server_ip.set("server ip", "localhost"));
     network_parameters.add(remote_port.set("remote port", 8000));
@@ -142,7 +141,7 @@ void testApp::update() {
 
     // update the mesh data
     local_mesh.update();
-    if(activate_network) remote_mesh.update();
+    remote_mesh.update();
     
     // only update if one of the meshes has received new data
     if(local_mesh.isFrameNew() || remote_mesh.isFrameNew())
