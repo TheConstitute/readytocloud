@@ -34,6 +34,7 @@ private:
     meshMan* remote;
     vector<meshFlash *> flash_list;
     int max_flashes = 500;
+    int num_active_flashes = 0;
 };
 
 

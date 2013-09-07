@@ -36,6 +36,11 @@ void meshInteractor::update(){
             }
         }
     }
+    
+    num_active_flashes = 0;
+    for (int i=0; i<flash_list.size(); i++) {
+        if (flash_list[i]->isActive()) num_active_flashes++;
+    }
 }
 
 void meshInteractor::draw(){
@@ -45,8 +50,10 @@ void meshInteractor::draw(){
             flash_list[i]->draw();
         }
     
-        if (flash_list.size() > 10 && !britzel_sound.getIsPlaying())
+        if (num_active_flashes > 10 && !britzel_sound.getIsPlaying())
             britzel_sound.play();
+        else if (num_active_flashes <= 10 && britzel_sound.getIsPlaying())
+            britzel_sound.stop();
     
     ofPopStyle();
 
