@@ -415,7 +415,7 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/dmx_state_remote/3") { dmx_state_remote = 3; }
         else if (m.getAddress() == "/dmx_state_remote/4") { dmx_state_remote = 4; }
         else if (m.getAddress() == "/dmx_state_remote/5") { dmx_state_remote = 5; }
-        else if (m.getAddress() == "/dmx_state_remote/6") { dmx_state_remote = 6; }
+        else if (m.getAddress() == "/dmx_state_remote/6") { dmx_state_remote = 6; remote_mesh.beamOut(); } // beam out the remote mesh when they beamed themselves out
     }
     
     // now work through the messages from the ipad and update the parameters
