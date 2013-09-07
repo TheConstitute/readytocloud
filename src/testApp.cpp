@@ -235,7 +235,7 @@ void testApp::nextState(){
 void testApp::stateChanged(int &state){
     // inform the other installation about this change
     ofxOscMessage message;
-    message.setAddress("/dmx_state/" + ofToString(state));
+    message.setAddress("/dmx_state_remote/" + ofToString(state));
     state_sender.sendMessage(message);
         
     // update the scene with the changes
