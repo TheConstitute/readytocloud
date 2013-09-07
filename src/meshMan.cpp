@@ -62,8 +62,13 @@ void meshMan::setup(meshTransceiver* transceiver, ofxKinect* kinect){
 void meshMan::updateFromKinect(){
     kinect->update();
     
-    // there is a new frame and we are connected
-	if(kinect->isFrameNew()) {
+    // clear the mesh if the user is beamed out 
+    if(beam_state == beamed_out){
+        mesh.clear();
+    }
+    
+    // update the mesh if there is a new frame
+	else if(kinect->isFrameNew()) {
         int w = 640;
         int h = 480;
         mesh.clear();
@@ -79,9 +84,6 @@ void meshMan::updateFromKinect(){
                         ofVec3f current = kinect->getWorldCoordinateAt(x, y);
                         ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
                         ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
-    //                    ofVec3f current = ofVec3f(x, y, kinect->getDistanceAt(x, y));
-    //                    ofVec3f right = ofVec3f(x + mesh_resolution, y, kinect->getDistanceAt(x + mesh_resolution, y));
-    //                    ofVec3f below = ofVec3f(x, y + mesh_resolution, kinect->getDistanceAt(x, y + mesh_resolution));
 
                         if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max){
                             // apply offset
@@ -169,36 +171,6 @@ void meshMan::updateFromKinect(){
         }
         
         transceiver->send(&mesh);
-        
-        
-        // TODO: reactivate this autocenter stuff
-        //    /* get the center of the pointcloud */
-        //    if(autocenter){
-        //        ofVec3f sumOfAllPoints(0,0,0);
-        //        vector<ofVec3f> vertices = allUserPoints.getVertices();
-        //        for(int i = 0; i < vertices.size(); i++){
-        //            sumOfAllPoints += vertices[i];
-        //        }
-        //        if(vertices.size() > 0)
-        //            mesh_local_center = sumOfAllPoints / vertices.size();
-        //    }
-        //
-        //    // calculate the center of the remote mesh
-        //    if(remote_autocenter){
-        //        ofMesh allUserPoints;
-        //
-        //        // put all vertices in one mesh
-        //        for(int i = 0; i< NUM_MAX_USERS; i++){ allUserPoints.addVertices(remoteMeshes[i].getVertices()); }
-        //
-        //        // get the center
-        //        ofVec3f sumOfAllPoints(0,0,0);
-        //        vector<ofVec3f> vertices = allUserPoints.getVertices();
-        //        for(int i = 0; i < vertices.size(); i++){
-        //            sumOfAllPoints += vertices[i];
-        //        }
-        //        if(vertices.size() > 0)
-        //            mesh_remote_center = sumOfAllPoints / vertices.size();
-        //    }
     }
 }
 
@@ -252,7 +224,7 @@ void meshMan::drawDebug(){
 void meshMan::updateFromNetwork(){
     if(transceiver->receive(&temp_mesh)){
         mesh = ofMesh(temp_mesh);
-        frame_new = true;
+        frame_new = true; // flag that we have made a change to the mesh => this is needed to know that the mesh interactor has to be updated
     }
 }
 
