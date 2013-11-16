@@ -149,6 +149,27 @@ void testApp::update() {
     
     oscUpdate();
     
+    // synchronize the settings of the light pairs
+    spotInteraction1.pulseSpeed = ledRingInteraction.pulseSpeed;
+    spotInteraction2.pulseSpeed = ledRingInteraction.pulseSpeed;
+    spotInteraction2.pulseMin = spotInteraction1.pulseMin;
+    spotInteraction2.pulseMax = spotInteraction1.pulseMax;
+    spotInteraction2.static_brightness = spotInteraction1.static_brightness;
+    spotCloud2.fadeTime = spotCloud1.fadeTime;
+    spotCloud2.static_brightness = spotCloud1.static_brightness;
+    spotCloud2.fadeTime = spotCloud1.fadeTime;
+    
+    // set pulse speeds for the cloudspots equal to the interaction spots
+    spotCloud1.pulseSpeed = ledRingInteraction.pulseSpeed;
+    spotCloud1.pulseSpeed = ledRingInteraction.pulseSpeed;
+    spotCloud1.pulseMin = spotInteraction1.pulseMin;
+    spotCloud1.pulseMax = spotInteraction1.pulseMax;
+    spotCloud2.pulseSpeed = ledRingInteraction.pulseSpeed;
+    spotCloud2.pulseSpeed = ledRingInteraction.pulseSpeed;
+    spotCloud2.pulseMin = spotInteraction1.pulseMin;
+    spotCloud2.pulseMax = spotInteraction1.pulseMax;
+    
+    
     /* update DMX */
     dmxUpdate();
 }
@@ -200,16 +221,6 @@ void testApp::draw() {
 
     ofPopMatrix();
     
-    // synchronize the settings of the light pairs
-    spotInteraction1.pulseSpeed = ledRingInteraction.pulseSpeed;
-    spotInteraction2.pulseSpeed = ledRingInteraction.pulseSpeed;
-    spotInteraction2.pulseMin = spotInteraction1.pulseMin;
-    spotInteraction2.pulseMax = spotInteraction1.pulseMax;
-    spotInteraction2.static_brightness = spotInteraction1.static_brightness;
-    spotCloud2.fadeTime = spotCloud1.fadeTime;
-    spotCloud2.static_brightness = spotCloud1.static_brightness;
-    spotCloud2.fadeTime = spotCloud1.fadeTime;
-    
     if(draw_debug)
         local_mesh.drawDebug();
     if(draw_gui){
@@ -247,16 +258,25 @@ void testApp::updateScene(){
     switch(dmx_state){
         // blackout mode
         case 0:
-            spotInteraction1.stopPulse();
-            spotInteraction2.stopPulse();
-            spotInteraction1.fadeOut();
-            spotInteraction2.fadeOut();
-            ledRingInteraction.stopPulse(); 
+
+            // FOR RIGA WE WANT THE BLACKOUT MODE TO HAVE SOME PULSING LIGHTS
+            ledRingInteraction.stopPulse();
             ledRingInteraction.fadeOut();
-            spotCloud1.stopPulse();
-            spotCloud2.stopPulse();
-            spotCloud1.fadeOut();
-            spotCloud2.fadeOut();
+            spotInteraction1.pulseBrightness();
+            spotInteraction2.pulseBrightness();
+            spotCloud1.pulseBrightness();
+            spotCloud2.pulseBrightness();
+
+//            // original code is commented out
+//            spotInteraction1.stopPulse();
+//            spotInteraction2.stopPulse();
+//            spotInteraction1.fadeOut();
+//            spotInteraction2.fadeOut();
+//            spotCloud1.stopPulse();
+//            spotCloud2.stopPulse();
+//            spotCloud1.fadeOut();
+//            spotCloud2.fadeOut();
+            
             local_mesh.beamOut();
             remote_mesh.beamOut();
             break;
