@@ -267,6 +267,12 @@ void meshMan::draw(){
 }
 
 //--------------------------------------------------------------
+bool meshMan::isBeamedIn(){
+    if(beam_state == beamed_in) return true;
+    else return false;
+}
+
+//--------------------------------------------------------------
 void meshMan::beamIn(){
     if(beam_state == beamed_out){
         beam_state = beaming_in;

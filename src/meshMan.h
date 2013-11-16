@@ -29,6 +29,8 @@ public:
     void beamIn();
     void beamOut();
     
+    bool isBeamedIn();
+    
     ofParameter<float> near_threshold, far_threshold;
     ofParameter<float> depth_threshold_max;
     ofParameter<int> mesh_resolution_x;

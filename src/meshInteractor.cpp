@@ -27,19 +27,23 @@ void meshInteractor::setup(meshMan *local, meshMan* remote){
 void meshInteractor::update(){
     // update the sound system
     ofSoundUpdate();
+    num_active_flashes = 0;
     
-    for(int l = 0; l < local->getMesh()->getNumVertices()-resolution; l+=resolution){
-        for(int r = 0; r < remote->getMesh()->getNumVertices()-resolution; r+=resolution ){
-            float d = local->getMesh()->getVertex(l).distance(remote->getMesh()->getVertex(r));
-            if (d < distance){
-                tryCreateFlash(local->getMesh()->getVertex(l), remote->getMesh()->getVertex(r));
+    // only draw flashes and play sound when both users are beamed in
+    if(local->isBeamedIn() && remote->isBeamedIn()){
+        for(int l = 0; l < local->getMesh()->getNumVertices()-resolution; l+=resolution){
+            for(int r = 0; r < remote->getMesh()->getNumVertices()-resolution; r+=resolution ){
+                float d = local->getMesh()->getVertex(l).distance(remote->getMesh()->getVertex(r));
+                if (d < distance){
+                    tryCreateFlash(local->getMesh()->getVertex(l), remote->getMesh()->getVertex(r));
+                }
             }
         }
-    }
-    
-    num_active_flashes = 0;
-    for (int i=0; i<flash_list.size(); i++) {
-        if (flash_list[i]->isActive()) num_active_flashes++;
+        
+        // update the number of active flashes
+        for (int i=0; i<flash_list.size(); i++) {
+            if (flash_list[i]->isActive()) num_active_flashes++;
+        }
     }
 }
 
@@ -49,13 +53,14 @@ void meshInteractor::draw(){
         for (int i=0; i<flash_list.size(); i++){
             flash_list[i]->draw();
         }
-    
-        if (num_active_flashes > 10 && !britzel_sound.getIsPlaying())
-            britzel_sound.play();
-        else if (num_active_flashes <= 10 && britzel_sound.getIsPlaying())
-            britzel_sound.stop();
-    
     ofPopStyle();
+
+    if (num_active_flashes > 10 && !britzel_sound.getIsPlaying())
+        britzel_sound.play();
+    else if (num_active_flashes <= 10 && britzel_sound.getIsPlaying())
+        britzel_sound.stop();
+    
+
 
 }
 
