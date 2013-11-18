@@ -30,6 +30,7 @@ public:
     void beamOut();
     
     bool isBeamedIn();
+    bool isBeamedOut();
     
     ofParameter<float> near_threshold, far_threshold;
     ofParameter<float> depth_threshold_max;

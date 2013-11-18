@@ -30,7 +30,7 @@ void meshInteractor::update(){
     num_active_flashes = 0;
     
     // only draw flashes and play sound when both users are beamed in
-    if(local->isBeamedIn() && remote->isBeamedIn()){
+    if(!local->isBeamedOut() && !remote->isBeamedOut()){
         for(int l = 0; l < local->getMesh()->getNumVertices()-resolution; l+=resolution){
             for(int r = 0; r < remote->getMesh()->getNumVertices()-resolution; r+=resolution ){
                 float d = local->getMesh()->getVertex(l).distance(remote->getMesh()->getVertex(r));
@@ -55,9 +55,9 @@ void meshInteractor::draw(){
         }
     ofPopStyle();
 
-    if (num_active_flashes > 10 && !britzel_sound.getIsPlaying())
+    if (num_active_flashes > 5 && !britzel_sound.getIsPlaying())
         britzel_sound.play();
-    else if (num_active_flashes <= 10 && britzel_sound.getIsPlaying())
+    else if (num_active_flashes <= 5 && britzel_sound.getIsPlaying())
         britzel_sound.stop();
     
 

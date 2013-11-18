@@ -106,41 +106,41 @@ void meshMan::updateFromKinect(){
                 }
             }
         }
-        else if (mesh_mode == mesh_mode_quads){
-            mesh.setMode(OF_PRIMITIVE_QUADS);
-            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
-                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
-                    float distance = kinect->getDistanceAt(x, y);
-                    if(distance > near_threshold && distance < far_threshold) {
-                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
-                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
-                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
-                        
-                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
-                            // apply offset
-                            current += offset;
-                            right += offset;
-                            below += offset;
-                            rightbelow += offset;
-                            
-                            if(mirror){
-                                current.x *= -1;
-                                right.x *= -1;
-                                below.x *= -1;
-                                rightbelow.x *= -1;
-                            }
-                            
-                            // apply the offset and add to the mesh
-                            mesh.addVertex(current);
-                            mesh.addVertex(right);
-                            mesh.addVertex(rightbelow);
-                            mesh.addVertex(below);
-                        }
-                    }
-                }
-            }
-        }
+//        else if (mesh_mode == mesh_mode_quads){
+//            mesh.setMode(OF_PRIMITIVE_QUADS);
+//            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
+//                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
+//                    float distance = kinect->getDistanceAt(x, y);
+//                    if(distance > near_threshold && distance < far_threshold) {
+//                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+//                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
+//                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
+//                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
+//                        
+//                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
+//                            // apply offset
+//                            current += offset;
+//                            right += offset;
+//                            below += offset;
+//                            rightbelow += offset;
+//                            
+//                            if(mirror){
+//                                current.x *= -1;
+//                                right.x *= -1;
+//                                below.x *= -1;
+//                                rightbelow.x *= -1;
+//                            }
+//                            
+//                            // apply the offset and add to the mesh
+//                            mesh.addVertex(current);
+//                            mesh.addVertex(right);
+//                            mesh.addVertex(rightbelow);
+//                            mesh.addVertex(below);
+//                        }
+//                    }
+//                }
+//            }
+//        }
         else if (mesh_mode == mesh_mode_lines){
             mesh.setMode(OF_PRIMITIVE_LINES);
             
@@ -273,6 +273,12 @@ bool meshMan::isBeamedIn(){
 }
 
 //--------------------------------------------------------------
+bool meshMan::isBeamedOut(){
+    if(beam_state == beamed_out) return true;
+    else return false;
+}
+
+//--------------------------------------------------------------
 void meshMan::beamIn(){
     if(beam_state == beamed_out){
         beam_state = beaming_in;
@@ -362,22 +368,22 @@ void meshMan::drawBeamInOut(float fader)
                 }
                 i+=3;
                 break;
-            case OF_PRIMITIVE_QUADS:
-                {
-                    ofPoint p1(vertices[i]);
-                    ofPoint p2(vertices[i]);
-                    ofPoint p3(vertices[i]);
-                    ofPoint p4(vertices[i]);
-                    
-                    if (p1.y > drawTreshold && p2.y > drawTreshold && p3.y > drawTreshold && p4.y > drawTreshold) {
-                        ofLine(p1, p2);
-                        ofLine(p2, p3);
-                        ofLine(p3, p4);
-                        ofLine(p4, p1);
-                    }
-                    i+=4;
-                }
-                break;
+//            case OF_PRIMITIVE_QUADS:
+//                {
+//                    ofPoint p1(vertices[i]);
+//                    ofPoint p2(vertices[i]);
+//                    ofPoint p3(vertices[i]);
+//                    ofPoint p4(vertices[i]);
+//                    
+//                    if (p1.y > drawTreshold && p2.y > drawTreshold && p3.y > drawTreshold && p4.y > drawTreshold) {
+//                        ofLine(p1, p2);
+//                        ofLine(p2, p3);
+//                        ofLine(p3, p4);
+//                        ofLine(p4, p1);
+//                    }
+//                    i+=4;
+//                }
+//                break;
                 
             case OF_PRIMITIVE_LINES:
                 if (vertices[i].y > drawTreshold && vertices[i+1].y > drawTreshold) {
