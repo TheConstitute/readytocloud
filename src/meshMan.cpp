@@ -60,117 +60,130 @@ void meshMan::setup(meshTransceiver* transceiver, ofxKinect* kinect){
 
 //--------------------------------------------------------------
 void meshMan::updateFromKinect(){
-    kinect->update();
-    
-    // clear the mesh if the user is beamed out 
-    if(beam_state == beamed_out){
-        mesh.clear();
-    }
-    
-    // update the mesh if there is a new frame
-	else if(kinect->isFrameNew()) {
-        int w = 640;
-        int h = 480;
-        mesh.clear();
-
-        frame_new = true;   // flag that we have made a change to the mesh => this is needed to know that the mesh interactor has to be updated
-
-        if(mesh_mode == mesh_mode_triangles){
-            mesh.setMode(OF_PRIMITIVE_TRIANGLES); 
-            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
-                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
-                    float distance = kinect->getDistanceAt(x, y);
-                    if(distance > near_threshold && distance < far_threshold) {
-                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
-                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
-
-                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max){
-                            // apply offset
-                            current += offset;
-                            right += offset;
-                            below += offset;
-                            
-                            if(mirror){
-                                current.x *= -1;
-                                right.x *= -1;
-                                below.x *= -1;
-                            }
-                            
-                            // add to the mesh
-                            mesh.addVertex(current);
-                            mesh.addVertex(right);
-                            mesh.addVertex(below);
-                        }
-                    }
-                }
-            }
-        }
-//        else if (mesh_mode == mesh_mode_quads){
-//            mesh.setMode(OF_PRIMITIVE_QUADS);
-//            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
-//                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
-//                    float distance = kinect->getDistanceAt(x, y);
-//                    if(distance > near_threshold && distance < far_threshold) {
-//                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-//                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
-//                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
-//                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
-//                        
-//                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
-//                            // apply offset
-//                            current += offset;
-//                            right += offset;
-//                            below += offset;
-//                            rightbelow += offset;
-//                            
-//                            if(mirror){
-//                                current.x *= -1;
-//                                right.x *= -1;
-//                                below.x *= -1;
-//                                rightbelow.x *= -1;
-//                            }
-//                            
-//                            // apply the offset and add to the mesh
-//                            mesh.addVertex(current);
-//                            mesh.addVertex(right);
-//                            mesh.addVertex(rightbelow);
-//                            mesh.addVertex(below);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-        else if (mesh_mode == mesh_mode_lines){
-            mesh.setMode(OF_PRIMITIVE_LINES);
-            
-            // make the horizontal lines
-            for(int y = 0; y < h - mesh_resolution_y; y+= mesh_resolution_y) {
-                for(int x = 0; x < w - mesh_resolution_x; x+=mesh_resolution_x) {
-                    ofVec3f current = kinect->getWorldCoordinateAt(x, y);
-                    
-                    if(current.z > near_threshold && current.z < far_threshold){
-                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
-                        if(abs(current.z - right.z) < depth_threshold_max) {
-                            // apply offset
-                            current += offset;
-                            right += offset;
-                            
-                            if(mirror){
-                                current.x *= -1;
-                                right.x *= -1;
-                            }
-                            
-                            // apply the offset and add to the mesh
-                            mesh.addVertex(current);
-                            mesh.addVertex(right);
-                        }
-                    }
-                }
-            }
+    if(kinect->isConnected()){
+        kinect->update();
+        
+        // clear the mesh if the user is beamed out 
+        if(beam_state == beamed_out){
+            mesh.clear();
         }
         
-        transceiver->send(&mesh);
+        // update the mesh if there is a new frame
+        else if(kinect->isFrameNew()) {
+            int w = 640;
+            int h = 480;
+            mesh.clear();
+
+            frame_new = true;   // flag that we have made a change to the mesh => this is needed to know that the mesh interactor has to be updated
+
+            if(mesh_mode == mesh_mode_triangles){
+                mesh.setMode(OF_PRIMITIVE_TRIANGLES); 
+                for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
+                    for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
+                        float distance = kinect->getDistanceAt(x, y);
+                        if(distance > near_threshold && distance < far_threshold) {
+                            ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+                            ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
+                            ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
+
+                            if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max){
+                                // apply offset
+                                current += offset;
+                                right += offset;
+                                below += offset;
+                                
+                                if(mirror){
+                                    current.x *= -1;
+                                    right.x *= -1;
+                                    below.x *= -1;
+                                }
+                                
+                                // add to the mesh
+                                mesh.addVertex(current);
+                                mesh.addVertex(right);
+                                mesh.addVertex(below);
+                            }
+                        }
+                    }
+                }
+            }
+    //        else if (mesh_mode == mesh_mode_quads){
+    //            mesh.setMode(OF_PRIMITIVE_QUADS);
+    //            for(int y = 0; y < h - mesh_resolution_y; y += mesh_resolution_y) {
+    //                for(int x = 0; x < w - mesh_resolution_x; x += mesh_resolution_x) {
+    //                    float distance = kinect->getDistanceAt(x, y);
+    //                    if(distance > near_threshold && distance < far_threshold) {
+    //                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+    //                        ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
+    //                        ofVec3f below = kinect->getWorldCoordinateAt(x, y + mesh_resolution_y);
+    //                        ofVec3f rightbelow = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y + mesh_resolution_y);
+    //                        
+    //                        if(abs(current.distance(right)) < depth_threshold_max && abs(current.distance(below)) < depth_threshold_max && abs(current.distance(rightbelow)) < depth_threshold_max){
+    //                            // apply offset
+    //                            current += offset;
+    //                            right += offset;
+    //                            below += offset;
+    //                            rightbelow += offset;
+    //                            
+    //                            if(mirror){
+    //                                current.x *= -1;
+    //                                right.x *= -1;
+    //                                below.x *= -1;
+    //                                rightbelow.x *= -1;
+    //                            }
+    //                            
+    //                            // apply the offset and add to the mesh
+    //                            mesh.addVertex(current);
+    //                            mesh.addVertex(right);
+    //                            mesh.addVertex(rightbelow);
+    //                            mesh.addVertex(below);
+    //                        }
+    //                    }
+    //                }
+    //            }
+    //        }
+            else if (mesh_mode == mesh_mode_lines){
+                mesh.setMode(OF_PRIMITIVE_LINES);
+                
+                // make the horizontal lines
+                for(int y = 0; y < h - mesh_resolution_y; y+= mesh_resolution_y) {
+                    for(int x = 0; x < w - mesh_resolution_x; x+=mesh_resolution_x) {
+                        ofVec3f current = kinect->getWorldCoordinateAt(x, y);
+                        
+                        if(current.z > near_threshold && current.z < far_threshold){
+                            ofVec3f right = kinect->getWorldCoordinateAt(x + mesh_resolution_x, y);
+                            if(abs(current.z - right.z) < depth_threshold_max) {
+                                // apply offset
+                                current += offset;
+                                right += offset;
+                                
+                                if(mirror){
+                                    current.x *= -1;
+                                    right.x *= -1;
+                                }
+                                
+                                // apply the offset and add to the mesh
+                                mesh.addVertex(current);
+                                mesh.addVertex(right);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            transceiver->send(&mesh);
+        }
+    }
+    
+    // try to initialize the kinect again when connection was lost
+    else {
+        // clear the mesh while the kinect is not delivering data
+        mesh.clear();
+        
+        kinect->setRegistration(true);   // enable depth->video image calibration
+        kinect->init();
+        kinect->open();
+        kinect->setLed(ofxKinect::LED_OFF);
     }
 }
 
