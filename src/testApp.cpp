@@ -36,6 +36,7 @@ void testApp::setup() {
     local_mesh_parameters.add(x_correction_local.set("x correction local", 0, -1000, 1000));
     local_mesh_parameters.add(y_correction_local.set("y correction local", 0, -1000, 1000));
     local_mesh_parameters.add(local_mesh.mirror.set("mirror", false));
+    local_mesh_parameters.add(local_mesh.offset.set("local mesh offset", ofVec3f(0, 0, -3000), ofVec3f(-5000,-5000,-5000), ofVec3f(5000,5000,5000)));
     
     interaction_parameters.setName("interaction parameters");
     interaction_parameters.add(mesh_interactor.distance.set("distance", 300, 0, 2000));
@@ -84,12 +85,6 @@ void testApp::setup() {
     gui.add(light_parameters);
     gui.loadFromFile("settings.xml");
     
-    // gui3d
-    gui3d.setup("positioning", "positioning.xml", 800, 30);
-    gui3d.add(local_mesh.offset.set("local mesh offset", ofVec3f(0, 0, -3000), ofVec3f(-5000,-5000,-5000), ofVec3f(5000,5000,5000)));
-    gui3d.loadFromFile("positioning.xml");
-    
-    draw_gui3d = false;
     draw_gui = false;
     
     /* DMX SETUP */
@@ -233,9 +228,6 @@ void testApp::draw() {
         ofDrawBitmapString("s: \t" + ofToString(mesh_transceiver.getNumBytesSent()), ofGetWidth() - 200, ofGetHeight() - 30);
         ofDrawBitmapString("is connected: \t" + ofToString(mesh_transceiver.isConnected()), ofGetWidth() - 200, ofGetHeight() - 15);
     }
-    if(draw_gui3d)
-        gui3d.draw();
-    
 }
 
 //--------------------------------------------------------------
@@ -400,21 +392,12 @@ void testApp::keyPressed (int key) {
             draw_gui = !draw_gui;
             if(draw_gui)
                 ofShowCursor();
-            else if (!draw_gui3d)
-                ofHideCursor();
             break;
         case 'c':
             use_easy_cam = !use_easy_cam;
             break;
         case 'g':
             draw_grid = !draw_grid;
-            break;
-        case 'p':
-            draw_gui3d = !draw_gui3d;
-            if(draw_gui3d)
-                ofShowCursor();
-            else if (!draw_gui)
-                ofHideCursor();
             break;
         case OF_KEY_UP:
 			kinect_angle++;
@@ -547,8 +530,8 @@ void testApp::oscUpdate()
         else if (m.getAddress() == "/centering/3d/z") { ofVec3f current = local_mesh.offset; current.z = m.getArgAsFloat(0); local_mesh.offset = current; }
         
         // load/save settings
-        else if (m.getAddress() == "/settings/save") { gui.saveToFile("settings.xml"); gui3d.saveToFile("positioning.xml"); }
-        else if (m.getAddress() == "/settings/load") { gui.loadFromFile("settings.xml"); gui3d.loadFromFile("positioning.xml"); }
+        else if (m.getAddress() == "/settings/save") { gui.saveToFile("settings.xml"); }
+        else if (m.getAddress() == "/settings/load") { gui.loadFromFile("settings.xml"); }
         
         // mesh mode
         else if (m.getAddress() == "/mesh_mode/triangles") { local_mesh.mesh_mode = local_mesh.mesh_mode_triangles; }

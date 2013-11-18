@@ -44,8 +44,7 @@ class testApp : public ofBaseApp{
     
         // GUI 
         ofxPanel gui;
-        ofxPanel gui3d;
-        bool draw_gui, draw_gui3d;
+        bool draw_gui;
     
         // VIDEO OVERLAYS
         ofVideoPlayer overlay_in_local;
