@@ -139,6 +139,8 @@ void testApp::setup() {
 //--------------------------------------------------------------
 void testApp::update() {
 
+    screensaver.update();
+    
     // update the mesh data
     local_mesh.update();
     remote_mesh.update();
@@ -221,6 +223,8 @@ void testApp::draw() {
 
     ofPopMatrix();
     
+    screensaver.draw();
+    
     if(draw_debug)
         local_mesh.drawDebug();
     if(draw_gui){
@@ -259,13 +263,19 @@ void testApp::updateScene(){
         // blackout mode
         case 0:
 
-            // FOR RIGA WE WANT THE BLACKOUT MODE TO HAVE SOME PULSING LIGHTS
+            // FOR RIGA WE WANT THE BLACKOUT MODE TO HAVE SOME LIGHT
             ledRingInteraction.stopPulse();
             ledRingInteraction.fadeOut();
-            spotInteraction1.pulseBrightness();
-            spotInteraction2.pulseBrightness();
-            spotCloud1.pulseBrightness();
-            spotCloud2.pulseBrightness();
+            
+            spotInteraction1.stopPulse();
+            spotInteraction2.stopPulse();
+            spotCloud1.stopPulse();
+            spotCloud2.stopPulse();
+            
+            spotInteraction1.fadeIn();
+            spotInteraction2.fadeIn();
+            spotCloud1.fadeIn();
+            spotCloud2.fadeIn();
 
 //            // original code is commented out
 //            spotInteraction1.stopPulse();
@@ -417,6 +427,15 @@ void testApp::keyPressed (int key) {
 			if(kinect_angle<-30) kinect_angle=-30;
             kinect.setCameraTiltAngle(kinect_angle);
 			break;
+
+        case '0':
+            screensaver.setMode(0);
+            break;
+        
+        case '1':
+            screensaver.setMode(1);
+            break;
+        
 
     }
 }

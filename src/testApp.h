@@ -11,6 +11,7 @@
 #include "meshMan.h"
 #include "meshInteractor.h"
 #include "ofxOscParameterSync.h"
+#include "Screensaver.h"
 
 class testApp : public ofBaseApp{
 
@@ -154,5 +155,7 @@ class testApp : public ofBaseApp{
     string color_names[7] = {"white", "red", "green", "blue", "yellow", "pink", "violet"};
     
     float last_ipad_update;
+    
+    Screensaver screensaver;
     
 };
