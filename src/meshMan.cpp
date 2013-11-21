@@ -176,14 +176,16 @@ void meshMan::updateFromKinect(){
     }
     
     // try to initialize the kinect again when connection was lost
+    // unfortunately the program normally crashes when the kinect has been disconnected
     else {
         // clear the mesh while the kinect is not delivering data
         mesh.clear();
-        
+        kinect = new ofxKinect();
+        if(kinect->isConnected()){
         kinect->setRegistration(true);   // enable depth->video image calibration
         kinect->init();
         kinect->open();
-        kinect->setLed(ofxKinect::LED_OFF);
+        kinect->setLed(ofxKinect::LED_OFF);}
     }
 }
 
